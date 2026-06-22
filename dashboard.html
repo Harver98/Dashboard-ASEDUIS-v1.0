@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASEDUIS — Dashboard Administrativo</title>
+<style>
+/* ─── Reset & Base ─── */
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f9f1f1;color:#111827;min-height:100vh;display:flex}
+:root{
+  --red:#BE1522;--red-dark:#8A0F18;--red-light:#F9F1F1;--red-tint:#FDE8EA;--red-border:#F0D4D6;
+  --green:#16A34A;--green-light:#DCFCE7;--green-border:#BBF7D0;
+  --amber:#D97706;--amber-light:#FEF3C7;
+  --gray:#6B7280;--gray-light:#F9FAFB;--border:#E5E7EB;
+  --white:#fff;--text:#111827;--muted:#94A3B8;
+}
+
+/* ─── Sidebar ─── */
+.sidebar{width:240px;background:var(--red);min-height:100vh;display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-logo{display:flex;align-items:center;gap:12px;padding:24px 20px;border-bottom:1px solid rgba(255,255,255,.15)}
+.sidebar-logo img{width:44px;height:44px;object-fit:contain}
+.sidebar-logo-text .name{color:#fff;font-size:16px;font-weight:800;letter-spacing:1px}
+.sidebar-logo-text .sub{color:rgba(255,255,255,.6);font-size:11px;margin-top:1px}
+.nav-section{padding:16px 12px 8px}
+.nav-label{font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.6px;padding:0 8px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;margin-bottom:2px;text-decoration:none;transition:background .15s}
+.nav-item:hover{background:rgba(255,255,255,.1)}
+.nav-item.active{background:rgba(255,255,255,.2)}
+.nav-item .icon{font-size:18px;flex-shrink:0}
+.nav-item .label{font-size:13px;color:rgba(255,255,255,.75);font-weight:500}
+.nav-item.active .label{color:#fff;font-weight:700}
+.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid rgba(255,255,255,.15)}
+.user-row{display:flex;align-items:center;gap:10px}
+.user-av{width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.user-name{font-size:13px;color:#fff;font-weight:600}
+.user-role{font-size:10px;color:rgba(255,255,255,.55)}
+.logout-btn{margin-top:8px;display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,.1);border:none;width:100%}
+.logout-btn span{font-size:13px;color:rgba(255,255,255,.8)}
+
+/* ─── Main ─── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between}
+.page-title{font-size:20px;font-weight:700;color:var(--red)}
+.page-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--gray-light);border:1px solid var(--border);border-radius:10px;padding:8px 14px;font-size:13px;color:var(--muted);width:260px}
+
+.content{flex:1;padding:24px 28px;overflow-y:auto}
+
+/* ─── Stats ─── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:14px;border:1px solid var(--red-border);padding:20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%}
+.stat-card.green::before{background:var(--green)}
+.stat-card.amber::before{background:var(--amber)}
+.stat-card.gray::before{background:var(--gray)}
+.stat-card.red::before{background:var(--red)}
+.stat-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.stat-value{font-size:34px;font-weight:700}
+.stat-card.green .stat-value{color:var(--green)}
+.stat-card.amber .stat-value{color:var(--amber)}
+.stat-card.gray .stat-value{color:var(--gray)}
+.stat-card.red .stat-value{color:var(--red)}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* ─── Cards ─── */
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.card{background:#fff;border-radius:14px;border:1px solid var(--red-border);overflow:hidden}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--red-border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:14px;font-weight:700;color:var(--text)}
+.btn{border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border:none;transition:opacity .15s}
+.btn:hover{opacity:.88}
+.btn-primary{background:var(--red);color:#fff}
+.btn-outline{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.btn-sm{padding:5px 12px;font-size:11px;border-radius:8px}
+
+/* ─── Tabla ─── */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--red-tint);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;padding:11px 16px;text-align:left;white-space:nowrap}
+tbody td{font-size:13px;color:var(--text);padding:13px 16px;border-top:1px solid var(--red-border);vertical-align:middle}
+tbody tr:hover{background:var(--red-tint)}
+.td-name strong{display:block;font-weight:600}
+.td-name small{font-size:11px;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-dot{width:5px;height:5px;border-radius:50%}
+.badge.active{background:var(--green-light);color:var(--green)}
+.badge.active .badge-dot{background:var(--green)}
+.badge.expired{background:var(--amber-light);color:var(--amber)}
+.badge.expired .badge-dot{background:var(--amber)}
+.badge.inactive{background:var(--red-tint);color:var(--red)}
+.badge.inactive .badge-dot{background:var(--red)}
+.action-btn{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;font-size:16px;transition:background .15s}
+.action-btn:hover{background:var(--red-tint)}
+
+/* ─── Validaciones list ─── */
+.val-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--red-border)}
+.val-item:last-child{border-bottom:none}
+.val-emoji{font-size:22px;flex-shrink:0}
+.val-info{flex:1}
+.val-nombre{font-size:13px;font-weight:600;color:var(--text)}
+.val-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.val-hora{font-size:11px;color:var(--muted);text-align:right}
+
+/* ─── Secretarios ─── */
+.sec-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--red-border)}
+.sec-row:last-child{border-bottom:none}
+.sec-av{width:36px;height:36px;background:var(--red-tint);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--red);flex-shrink:0}
+.sec-info{flex:1}
+.sec-name{font-size:13px;font-weight:600;color:var(--text)}
+.sec-email{font-size:11px;color:var(--muted)}
+.toggle{width:40px;height:22px;background:#e5e7eb;border-radius:11px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;border:none}
+.toggle.on{background:var(--red)}
+.toggle::after{content:'';position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on::after{left:21px}
+.toggle::after{left:3px}
+
+/* ─── Modal ─── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:20px;width:100%;max-width:480px;padding:28px;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px}
+.modal-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.form-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;margin-top:14px;display:block}
+.form-input{width:100%;background:var(--gray-light);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;font-size:14px;color:var(--text);outline:none;font-family:inherit}
+.form-input:focus{border-color:var(--red)}
+.form-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-footer{display:flex;gap:10px;margin-top:20px}
+.modal-footer .btn{flex:1;justify-content:center;padding:13px}
+.alert-box{background:var(--green-light);border:1px solid var(--green-border);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--green);margin-top:14px;line-height:1.5}
+
+/* ─── Responsive ─── */
+@media(max-width:1024px){.stats-grid{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}}
+@media(max-width:768px){.sidebar{display:none}.stats-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <!-- Logo ASEDUIS en base64 inline -->
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6eAAACFUlEQVR4nO3TsRHAIBDAsJD9d34W4NxCIU3gxmtm5gOO/tsB8DKDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASDQDAIBINAMAgEg0AwCASBwAY7gBOHqGFI0AAAAASUVORK5CYII=" alt="ASEDUIS">
+    <div class="sidebar-logo-text">
+      <div class="name">ASEDUIS</div>
+      <div class="sub">Panel administrativo</div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Principal</div>
+    <a class="nav-item active" onclick="showPage('dashboard')">
+      <span class="icon">📊</span><span class="label">Dashboard</span>
+    </a>
+    <a class="nav-item" onclick="showPage('egresados')">
+      <span class="icon">👥</span><span class="label">Egresados</span>
+    </a>
+    <a class="nav-item" onclick="showPage('secretarios')">
+      <span class="icon">🔑</span><span class="label">Secretarios</span>
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Reportes</div>
+    <a class="nav-item" onclick="showPage('validaciones')">
+      <span class="icon">📷</span><span class="label">Validaciones</span>
+    </a>
+    <a class="nav-item" onclick="showPage('reportes')">
+      <span class="icon">📑</span><span class="label">Reportes</span>
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Sistema</div>
+    <a class="nav-item" onclick="showPage('config')">
+      <span class="icon">⚙️</span><span class="label">Configuración</span>
+    </a>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-row">
+      <div class="user-av">JR</div>
+      <div>
+        <div class="user-name">Juan Rodríguez</div>
+        <div class="user-role">Administrador</div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="alert('Cerrando sesión...')">
+      <span>⬅</span><span>Cerrar sesión</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ══ MAIN ═════════════════════════════════════════════════ -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title" id="pageTitle">Dashboard</div>
+      <div class="page-sub" id="pageSub">Resumen general — junio 2026</div>
+    </div>
+    <div class="topbar-right">
+      <div class="search-box">
+        🔍 <span>Buscar egresado, cédula...</span>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('modalNuevo')">+ Nuevo egresado</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ── PÁGINA: Dashboard ── -->
+    <div id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card green">
+          <div class="stat-label">Egresados activos</div>
+          <div class="stat-value">487</div>
+          <div class="stat-sub">↑ 12 este mes</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-label">Carnets vencidos</div>
+          <div class="stat-value">63</div>
+          <div class="stat-sub">Requieren renovación</div>
+        </div>
+        <div class="stat-card gray">
+          <div class="stat-label">Inactivos</div>
+          <div class="stat-value">18</div>
+          <div class="stat-sub">Suspendidos</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Validaciones hoy</div>
+          <div class="stat-value">24</div>
+          <div class="stat-sub">Última: hace 5 min</div>
+        </div>
+      </div>
+
+      <div class="row2">
+        <!-- Egresados recientes -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Egresados recientes</div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-outline btn-sm" onclick="exportarExcel()">📊 Excel</button>
+              <button class="btn btn-primary btn-sm" onclick="openModal('modalNuevo')">+ Nuevo</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Nombre</th><th>Cédula</th><th>Estado</th><th>Vence</th><th></th></tr></thead>
+              <tbody>
+                <tr><td class="td-name"><strong>María García López</strong><small>Ing. Sistemas</small></td><td>1.098.765.432</td><td><span class="badge active"><span class="badge-dot"></span>Activo</span></td><td>31/12/2026</td><td><button class="action-btn" onclick="openModal('modalEditar')">✏️</button></td></tr>
+                <tr><td class="td-name"><strong>Carlos Rueda Méndez</strong><small>Administración</small></td><td>1.023.456.789</td><td><span class="badge expired"><span class="badge-dot"></span>Vencido</span></td><td>01/03/2026</td><td><button class="action-btn" onclick="openModal('modalEditar')">✏️</button></td></tr>
+                <tr><td class="td-name"><strong>Ana Torres Vargas</strong><small>Derecho</small></td><td>1.112.233.445</td><td><span class="badge active"><span class="badge-dot"></span>Activo</span></td><td>31/12/2026</td><td><button class="action-btn" onclick="openModal('modalEditar')">✏️</button></td></tr>
+                <tr><td class="td-name"><strong>Luis Moreno Castro</strong><small>Medicina</small></td><td>1.067.890.123</td><td><span class="badge inactive"><span class="badge-dot"></span>Inactivo</span></td><td>—</td><td><button class="action-btn" onclick="openModal('modalEditar')">✏️</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Últimas validaciones -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Últimas validaciones</div>
+            <button class="btn btn-outline btn-sm" onclick="showPage('validaciones')">Ver todas</button>
+          </div>
+          <div class="val-item"><span class="val-emoji">✅</span><div class="val-info"><div class="val-nombre">María García López</div><div class="val-sub">CC 1.098.765.432 · Validado por Laura G.</div></div><div class="val-hora">09:41</div></div>
+          <div class="val-item"><span class="val-emoji">⚠️</span><div class="val-info"><div class="val-nombre">Carlos Rueda Méndez</div><div class="val-sub">CC 1.023.456.789 · Vencido</div></div><div class="val-hora">09:35</div></div>
+          <div class="val-item"><span class="val-emoji">✅</span><div class="val-info"><div class="val-nombre">Ana Torres Vargas</div><div class="val-sub">CC 1.112.233.445 · Validado por Pedro A.</div></div><div class="val-hora">09:28</div></div>
+          <div class="val-item"><span class="val-emoji">❌</span><div class="val-info"><div class="val-nombre">Luis Moreno Castro</div><div class="val-sub">CC 1.067.890.123 · Inactivo</div></div><div class="val-hora">09:20</div></div>
+          <div class="val-item"><span class="val-emoji">❓</span><div class="val-info"><div class="val-nombre">QR desconocido</div><div class="val-sub">Código no registrado</div></div><div class="val-hora">09:10</div></div>
+        </div>
+      </div>
+
+      <!-- Secretarios activos -->
+      <div class="card" style="max-width:560px">
+        <div class="card-header">
+          <div class="card-title">Secretarios activos</div>
+          <button class="btn btn-outline btn-sm" onclick="openModal('modalSecretario')">+ Nuevo</button>
+        </div>
+        <div class="sec-row"><div class="sec-av">LG</div><div class="sec-info"><div class="sec-name">Laura Gómez</div><div class="sec-email">lgomez@aseduis.edu.co</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+        <div class="sec-row"><div class="sec-av">PA</div><div class="sec-info"><div class="sec-name">Pedro Arias</div><div class="sec-email">parias@aseduis.edu.co</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+        <div class="sec-row"><div class="sec-av">CR</div><div class="sec-info"><div class="sec-name">Clara Rincón</div><div class="sec-email">crincon@aseduis.edu.co</div></div><button class="toggle" onclick="this.classList.toggle('on')"></button></div>
+      </div>
+    </div>
+
+    <!-- ── PÁGINA: Egresados ── -->
+    <div id="page-egresados" style="display:none">
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="openModal('modalNuevo')">+ Nuevo egresado</button>
+        <button class="btn btn-outline" onclick="exportarExcel()">📊 Exportar Excel</button>
+        <button class="btn btn-outline" onclick="exportarPDF()">📄 Exportar PDF</button>
+        <span style="display:flex;gap:6px;margin-left:auto">
+          <button class="btn btn-outline btn-sm" style="border-color:var(--green);color:var(--green)">Activos</button>
+          <button class="btn btn-outline btn-sm" style="border-color:var(--amber);color:var(--amber)">Vencidos</button>
+          <button class="btn btn-outline btn-sm" style="border-color:var(--gray);color:var(--gray)">Todos</button>
+        </span>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Cédula</th><th>Email</th><th>Empresa</th><th>Estado</th><th>Vencimiento</th><th>Última val.</th><th>Acciones</th></tr></thead>
+            <tbody>
+              <tr><td class="td-name"><strong>María García López</strong><small>Ing. Sistemas · 2021</small></td><td>1.098.765.432</td><td style="font-size:12px">maria@uni.edu</td><td>Bancolombia</td><td><span class="badge active"><span class="badge-dot"></span>Activo</span></td><td>31/12/2026</td><td style="font-size:11px;color:var(--muted)">hoy 9:41</td><td><button class="action-btn" onclick="openModal('modalEditar')">✏️</button><button class="action-btn">🔒</button></td></tr>
+              <tr><td class="td-name"><strong>Carlos Rueda Méndez</strong><small>Adm. · 2019</small></td><td>1.023.456.789</td><td style="font-size:12px">carlos@gmail.com</td><td>—</td><td><span class="badge expired"><span class="badge-dot"></span>Vencido</span></td><td>01/03/2026</td><td style="font-size:11px;color:var(--muted)">hoy 9:35</td><td><button class="action-btn" onclick="openModal('modalEditar')">✏️</button><button class="action-btn">🔄</button></td></tr>
+              <tr><td class="td-name"><strong>Ana Torres Vargas</strong><small>Derecho · 2020</small></td><td>1.112.233.445</td><td style="font-size:12px">ana@firma.com</td><td>Estudio Jurídico</td><td><span class="badge active"><span class="badge-dot"></span>Activo</span></td><td>31/12/2026</td><td style="font-size:11px;color:var(--muted)">ayer 4:10</td><td><button class="action-btn" onclick="openModal('modalEditar')">✏️</button><button class="action-btn">🔒</button></td></tr>
+              <tr><td class="td-name"><strong>Luis Moreno Castro</strong><small>Medicina · 2018</small></td><td>1.067.890.123</td><td style="font-size:12px">luis@correo.co</td><td>Clínica Norte</td><td><span class="badge inactive"><span class="badge-dot"></span>Inactivo</span></td><td>—</td><td style="font-size:11px;color:var(--muted)">hace 3 días</td><td><button class="action-btn" onclick="openModal('modalEditar')">✏️</button><button class="action-btn">▶️</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PÁGINA: Secretarios ── -->
+    <div id="page-secretarios" style="display:none">
+      <div style="margin-bottom:16px">
+        <button class="btn btn-primary" onclick="openModal('modalSecretario')">+ Nuevo secretario</button>
+      </div>
+      <div class="card" style="max-width:680px">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Cédula</th><th>Email</th><th>Estado</th><th>Validaciones</th><th>Acciones</th></tr></thead>
+            <tbody>
+              <tr><td class="td-name"><strong>Laura Gómez</strong></td><td>1.045.111.222</td><td>lgomez@aseduis.edu.co</td><td><button class="toggle on" onclick="this.classList.toggle('on')"></button></td><td>48 este mes</td><td><button class="action-btn">✏️</button></td></tr>
+              <tr><td class="td-name"><strong>Pedro Arias</strong></td><td>1.067.333.444</td><td>parias@aseduis.edu.co</td><td><button class="toggle on" onclick="this.classList.toggle('on')"></button></td><td>31 este mes</td><td><button class="action-btn">✏️</button></td></tr>
+              <tr><td class="td-name"><strong>Clara Rincón</strong></td><td>1.089.555.666</td><td>crincon@aseduis.edu.co</td><td><button class="toggle" onclick="this.classList.toggle('on')"></button></td><td>0 este mes</td><td><button class="action-btn">✏️</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PÁGINA: Validaciones ── -->
+    <div id="page-validaciones" style="display:none">
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="btn btn-outline" onclick="exportarExcel()">📊 Exportar Excel</button>
+        <span style="display:flex;gap:6px;margin-left:auto">
+          <button class="btn btn-outline btn-sm">Hoy</button>
+          <button class="btn btn-outline btn-sm">Esta semana</button>
+          <button class="btn btn-outline btn-sm">Este mes</button>
+        </span>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Egresado</th><th>Cédula</th><th>Secretario</th><th>Resultado</th><th>Fecha</th><th>Hora</th></tr></thead>
+            <tbody>
+              <tr><td class="td-name"><strong>María García López</strong></td><td>1.098.765.432</td><td>Laura Gómez</td><td><span class="badge active"><span class="badge-dot"></span>Válido</span></td><td>04/06/2026</td><td>09:41</td></tr>
+              <tr><td class="td-name"><strong>Carlos Rueda Méndez</strong></td><td>1.023.456.789</td><td>Pedro Arias</td><td><span class="badge expired"><span class="badge-dot"></span>Vencido</span></td><td>04/06/2026</td><td>09:35</td></tr>
+              <tr><td class="td-name"><strong>Ana Torres Vargas</strong></td><td>1.112.233.445</td><td>Laura Gómez</td><td><span class="badge active"><span class="badge-dot"></span>Válido</span></td><td>04/06/2026</td><td>09:28</td></tr>
+              <tr><td class="td-name"><strong>Luis Moreno Castro</strong></td><td>1.067.890.123</td><td>Tomás Vera</td><td><span class="badge inactive"><span class="badge-dot"></span>Inactivo</span></td><td>04/06/2026</td><td>09:20</td></tr>
+              <tr><td class="td-name"><strong>QR desconocido</strong></td><td>—</td><td>Pedro Arias</td><td><span class="badge inactive"><span class="badge-dot"></span>No encontrado</span></td><td>04/06/2026</td><td>09:10</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PÁGINA: Reportes ── -->
+    <div id="page-reportes" style="display:none">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:800px">
+        <div class="card" style="padding:20px;text-align:center;cursor:pointer" onclick="exportarExcel()">
+          <div style="font-size:36px;margin-bottom:8px">📊</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)">Egresados activos</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Excel .xlsx</div>
+        </div>
+        <div class="card" style="padding:20px;text-align:center;cursor:pointer" onclick="exportarPDF()">
+          <div style="font-size:36px;margin-bottom:8px">📄</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)">Egresados activos</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">PDF</div>
+        </div>
+        <div class="card" style="padding:20px;text-align:center;cursor:pointer" onclick="exportarExcel()">
+          <div style="font-size:36px;margin-bottom:8px">📊</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)">Egresados vencidos</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Excel .xlsx</div>
+        </div>
+        <div class="card" style="padding:20px;text-align:center;cursor:pointer" onclick="exportarExcel()">
+          <div style="font-size:36px;margin-bottom:8px">📊</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)">Historial validaciones</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Excel .xlsx</div>
+        </div>
+        <div class="card" style="padding:20px;text-align:center;cursor:pointer" onclick="exportarExcel()">
+          <div style="font-size:36px;margin-bottom:8px">📊</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)">Reporte completo</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Todos los egresados</div>
+        </div>
+        <div class="card" style="padding:20px;text-align:center;cursor:pointer" onclick="exportarPDF()">
+          <div style="font-size:36px;margin-bottom:8px">📄</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)">Secretarios</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Lista completa PDF</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PÁGINA: Config ── -->
+    <div id="page-config" style="display:none">
+      <div class="card" style="max-width:480px;padding:24px">
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px">Configuración del sistema</div>
+        <label class="form-label">URL de convenios institucionales</label>
+        <input class="form-input" type="url" value="https://aseduis.edu.co/convenios">
+        <label class="form-label">Días de aviso antes del vencimiento</label>
+        <input class="form-input" type="number" value="30">
+        <label class="form-label">Nombre de la institución</label>
+        <input class="form-input" type="text" value="ASEDUIS">
+        <div style="margin-top:20px">
+          <button class="btn btn-primary">Guardar cambios</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ══ MODAL: Nuevo Egresado ══════════════════════════════════ -->
+<div class="modal-overlay" id="modalNuevo" onclick="closeOnBg(event,'modalNuevo')">
+  <div class="modal">
+    <div class="modal-title">Nuevo egresado</div>
+    <div class="modal-sub">El acceso se crea automáticamente al guardar</div>
+    <div class="alert-box">
+      ✅ El sistema generará el acceso automáticamente. La contraseña inicial será la cédula del egresado y se le pedirá cambiarla al primer ingreso.
+    </div>
+    <div class="form-row2">
+      <div><label class="form-label">Cédula *</label><input class="form-input" placeholder="Sin puntos" type="number"></div>
+      <div><label class="form-label">Teléfono</label><input class="form-input" placeholder="+57 300..." type="tel"></div>
+    </div>
+    <label class="form-label">Nombre completo *</label>
+    <input class="form-input" placeholder="Nombre y apellidos">
+    <label class="form-label">Correo electrónico *</label>
+    <input class="form-input" placeholder="correo@dominio.com" type="email">
+    <div class="form-row2">
+      <div><label class="form-label">Fecha vencimiento</label><input class="form-input" type="date" value="2026-12-31"></div>
+      <div><label class="form-label">Estado inicial</label>
+        <select class="form-input"><option>Activo</option><option>Inactivo</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalNuevo')">Cancelar</button>
+      <button class="btn btn-primary" onclick="closeModal('modalNuevo');alert('✓ Egresado creado. Acceso generado automáticamente.')">Crear egresado</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Editar Egresado ═════════════════════════════════ -->
+<div class="modal-overlay" id="modalEditar" onclick="closeOnBg(event,'modalEditar')">
+  <div class="modal">
+    <div class="modal-title">Editar egresado</div>
+    <div class="modal-sub">Modifica la información del egresado</div>
+    <div class="form-row2">
+      <div><label class="form-label">Cédula</label><input class="form-input" value="1.098.765.432" disabled style="opacity:.6"></div>
+      <div><label class="form-label">Teléfono</label><input class="form-input" value="+57 300 123 4567"></div>
+    </div>
+    <label class="form-label">Nombre completo</label>
+    <input class="form-input" value="María Fernanda García López">
+    <label class="form-label">Correo electrónico</label>
+    <input class="form-input" value="maria@universidad.edu.co" type="email">
+    <div class="form-row2">
+      <div><label class="form-label">Empresa</label><input class="form-input" value="Bancolombia"></div>
+      <div><label class="form-label">Cargo</label><input class="form-input" value="Analista"></div>
+    </div>
+    <div class="form-row2">
+      <div><label class="form-label">Fecha vencimiento</label><input class="form-input" type="date" value="2026-12-31"></div>
+      <div><label class="form-label">Estado</label>
+        <select class="form-input"><option selected>Activo</option><option>Vencido</option><option>Inactivo</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalEditar')">Cancelar</button>
+      <button class="btn btn-primary" onclick="closeModal('modalEditar');alert('✓ Cambios guardados.')">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Nuevo Secretario ═══════════════════════════════ -->
+<div class="modal-overlay" id="modalSecretario" onclick="closeOnBg(event,'modalSecretario')">
+  <div class="modal">
+    <div class="modal-title">Nuevo secretario</div>
+    <div class="modal-sub">El acceso se crea automáticamente al guardar</div>
+    <div class="alert-box">✅ El acceso se genera automáticamente. Contraseña inicial = cédula del secretario.</div>
+    <div class="form-row2">
+      <div><label class="form-label">Cédula *</label><input class="form-input" placeholder="Sin puntos" type="number"></div>
+      <div><label class="form-label">Teléfono</label><input class="form-input" placeholder="+57 300..." type="tel"></div>
+    </div>
+    <label class="form-label">Nombre completo *</label>
+    <input class="form-input" placeholder="Nombre y apellidos">
+    <label class="form-label">Correo electrónico *</label>
+    <input class="form-input" placeholder="correo@aseduis.edu.co" type="email">
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalSecretario')">Cancelar</button>
+      <button class="btn btn-primary" onclick="closeModal('modalSecretario');alert('✓ Secretario creado.')">Crear secretario</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── CONFIGURACIÓN DE SUPABASE ───
+const SUPABASE_URL = "https://ojzumnxteadbvqjyiumd.supabase.co"; 
+const SUPABASE_ANON_KEY = "sb_publishable_9U94Jm4ra4xQyTFTJBuSMg_MJH4K54d";   
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── Navegación entre páginas ──────────────────────────────────
+const pages = ['dashboard','egresados','secretarios','validaciones','reportes','config']
+const titles = {
+  dashboard:    ['Dashboard', 'Resumen general — junio 2026'],
+  egresados:    ['Egresados', '568 egresados registrados'],
+  secretarios:  ['Secretarios', '3 secretarios en el sistema'],
+  validaciones: ['Historial de validaciones', '24 validaciones hoy · 1.240 este mes'],
+  reportes:     ['Reportes', 'Genera y descarga informes del sistema'],
+  config:       ['Configuración', 'Ajustes del sistema'],
+}
+
+function showPage(name) {
+  pages.forEach(p => {
+    document.getElementById('page-'+p).style.display = p === name ? '' : 'none'
+  })
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'))
+  event.currentTarget.classList.add('active')
+  const [t, s] = titles[name] || [name, '']
+  document.getElementById('pageTitle').textContent = t
+  document.getElementById('pageSub').textContent = s
+}
+
+// ── Modales ───────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('show') }
+function closeModal(id) { document.getElementById(id).classList.remove('show') }
+function closeOnBg(e, id) { if (e.target.id === id) closeModal(id) }
+
+// ── Exportar (simulado) ───────────────────────────────────────
+function exportarExcel() { alert('Descargando Excel...\n(Conectar con Supabase para datos reales)') }
+function exportarPDF()   { alert('Generando PDF...\n(Conectar con Supabase para datos reales)') }
+</script>
+</body>
+</html>
