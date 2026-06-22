@@ -941,8 +941,12 @@ export default function DashboardPage() {
               style={{flex:1,justifyContent:'center'}}
               disabled={importando}
               onClick={()=>{
-                if(!importando){ setImportRows([]); setImportStatus([]); setImportMsg([]); setImportDone(false)
-                  if(importDone) setModalImport(false) }
+                setImportRows([])
+                setImportStatus([])
+                setImportMsg([])
+                setImportDone(false)
+                setModalImport(false)
+                if (fileInputRef.current) fileInputRef.current.value = ''
               }}
             >
               {importDone ? 'Cerrar' : importRows.length ? 'Cambiar archivo' : 'Cancelar'}
