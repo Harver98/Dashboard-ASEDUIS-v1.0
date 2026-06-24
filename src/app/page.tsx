@@ -19,25 +19,16 @@ function sumar365(base: string) {
   d.setDate(d.getDate() + 365)
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`
 }
+function diasRestantes(fechaVenc: string): number {
+  const hoy  = new Date(fechaHoy() + 'T00:00:00')
+  const venc = new Date(fechaVenc  + 'T00:00:00')
+  return Math.ceil((venc.getTime() - hoy.getTime()) / 86400000)
+}
 
 // ── Exportar Excel ────────────────────────────────────────────
 function exportarExcel(datos: any[], nombre: string) {
-  const cols = [
-    'cedula','nombre_completo','email','telefono','estado',
-    'fecha_nacimiento','empresa','cargo','ciudad_nacimiento','direccion',
-    'fecha_vencimiento','fecha_expedicion',
-    'titulo_pregrado','institucion_pregrado','fecha_grado_pregrado',
-    'titulo_posgrado','institucion_posgrado','fecha_grado_posgrado',
-    'created_at',
-  ]
-  const headers = [
-    'Cédula','Nombre completo','Email','Teléfono','Estado',
-    'Fecha nacimiento','Empresa','Cargo','Ciudad','Dirección',
-    'Vencimiento','Fecha expedición',
-    'Título pregrado','Institución pregrado','Fecha grado pregrado',
-    'Título posgrado','Institución posgrado','Fecha grado posgrado',
-    'Fecha registro',
-  ]
+  const cols    = ['cedula','nombre_completo','email','telefono','estado','fecha_vencimiento','fecha_expedicion','created_at']
+  const headers = ['Cédula','Nombre completo','Email','Teléfono','Estado','Vencimiento membresía','Fecha expedición','Fecha registro']
   const esc = (v: any) => {
     const s = (v ?? '').toString().replace(/"/g, '""')
     return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s}"` : s
@@ -60,15 +51,13 @@ function exportarPDF(datos: any[], nombre: string) {
       <td>${eg.email??''}</td>
       <td>${eg.telefono??'—'}</td>
       <td><span class="badge ${eg.estado}">${eg.estado??''}</span></td>
-      <td>${eg.empresa??'—'}</td>
-      <td>${eg.cargo??'—'}</td>
-      <td style="color:${eg.estado==='vencido'?'#D97706':'inherit'};font-weight:${eg.estado==='vencido'?700:400}">${eg.fecha_vencimiento??'—'}</td>
+      <td style="color:${eg.estado==='vencido'?'#D97706':eg.estado==='inactivo'?'#BE1522':'inherit'};font-weight:700">${eg.fecha_vencimiento??'—'}</td>
     </tr>`).join('')
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${nombre}</title>
   <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Segoe UI",sans-serif;color:#111;font-size:11px}
   .header{background:#BE1522;color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
   .header h1{font-size:18px;font-weight:800;letter-spacing:1px}.header p{font-size:11px;opacity:.8;margin-top:3px}
-  .meta{padding:0 24px 14px;display:flex;gap:24px}.meta span{font-size:11px;color:#6B7280}.meta strong{color:#111}
+  .meta{padding:0 24px 14px;display:flex;gap:24px;flex-wrap:wrap}.meta span{font-size:11px;color:#6B7280}.meta strong{color:#111}
   table{width:100%;border-collapse:collapse;font-size:10.5px}
   th{background:#FDE8EA;color:#BE1522;font-weight:700;text-transform:uppercase;font-size:9px;letter-spacing:.4px;padding:8px 12px;text-align:left;border-bottom:2px solid #F0D4D6}
   td{padding:8px 12px;border-bottom:1px solid #F5F5F5;vertical-align:middle}tr:nth-child(even) td{background:#FDF8F8}
@@ -76,7 +65,7 @@ function exportarPDF(datos: any[], nombre: string) {
   .badge.activo{background:#DCFCE7;color:#16A34A}.badge.vencido{background:#FEF3C7;color:#D97706}.badge.inactivo{background:#FDE8EA;color:#BE1522}
   .footer{margin-top:20px;padding:12px 24px;border-top:1px solid #F0D4D6;display:flex;justify-content:space-between;font-size:10px;color:#94A3B8}
   @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>
-  <div class="header"><div><h1>ASEDUIS</h1><p>Reporte de Egresados</p></div>
+  <div class="header"><div><h1>ASEDUIS</h1><p>Reporte de Egresados — Membresías</p></div>
   <div style="text-align:right"><div style="font-size:13px;font-weight:700">${datos.length} egresados</div><div style="font-size:10px;opacity:.8">${hoy}</div></div></div>
   <div class="meta">
     <span>📊 Total: <strong>${datos.length}</strong></span>
@@ -84,14 +73,12 @@ function exportarPDF(datos: any[], nombre: string) {
     <span>⚠️ Vencidos: <strong>${datos.filter((e:any)=>e.estado==='vencido').length}</strong></span>
     <span>❌ Inactivos: <strong>${datos.filter((e:any)=>e.estado==='inactivo').length}</strong></span>
   </div>
-  <table><thead><tr><th>Cédula</th><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Estado</th><th>Empresa</th><th>Cargo</th><th>Vencimiento</th></tr></thead>
+  <table><thead><tr><th>Cédula</th><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Estado</th><th>Vencimiento membresía</th></tr></thead>
   <tbody>${filas}</tbody></table>
-  <div class="footer"><span>Generado: ${hoy} · Sistema ASEDUIS</span><span>Página 1</span></div>
+  <div class="footer"><span>Generado: ${hoy} · Sistema ASEDUIS</span><span>Confidencial</span></div>
   <script>window.onload=()=>{window.print()}</script></body></html>`
   const blob = new Blob([html], { type: 'text/html;charset=utf-8;' })
-  const url  = URL.createObjectURL(blob)
-  window.open(url, '_blank')
-  setTimeout(() => URL.revokeObjectURL(url), 60000)
+  window.open(URL.createObjectURL(blob), '_blank')
 }
 
 const ESTADO_BADGE: Record<string, string> = {
@@ -105,84 +92,50 @@ const RESULTADO_BADGE: Record<string, string> = {
   inactivo: 'badge inactive', no_encontrado: 'badge inactive',
 }
 
-// ── Normalizar encabezados del Excel ─────────────────────────
 function normalizarHeader(h: string): string {
-  return h.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // quitar tildes
-    .replace(/[^a-z0-9]/g, ' ')
-    .trim()
-    .replace(/\s+/g, '_')
+  return h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, ' ').trim().replace(/\s+/g, '_')
 }
-// Mapeo de variantes de encabezado → campo interno
 const HEADER_MAP: Record<string, string> = {
-  cedula: 'cedula',
-  numero_de_cedula: 'cedula',
-  documento: 'cedula',
-  nombre_completo: 'nombre',
-  nombre: 'nombre',
-  nombres: 'nombre',
-  correo_electronico: 'email',
-  correo: 'email',
-  email: 'email',
-  correo_institucional: 'email',
-  telefono: 'telefono',
-  celular: 'telefono',
+  cedula: 'cedula', numero_de_cedula: 'cedula', documento: 'cedula',
+  nombre_completo: 'nombre', nombre: 'nombre', nombres: 'nombre',
+  correo_electronico: 'email', correo: 'email', email: 'email', correo_institucional: 'email',
+  telefono: 'telefono', celular: 'telefono',
 }
 
 const CSS = `
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:"Segoe UI",system-ui,sans-serif;background:#F9F1F1;color:#111827}
-
-  /* ── Layout ── */
   .layout{display:flex;min-height:100vh}
   .sidebar{width:240px;background:#BE1522;min-height:100vh;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0;transition:transform .25s}
   .main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
-
-  /* ── Mobile sidebar overlay ── */
   .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:199}
   @media(max-width:768px){
     .sidebar{position:fixed;top:0;left:0;height:100vh;z-index:200;transform:translateX(-100%)}
     .sidebar.open{transform:translateX(0)}
     .sidebar-backdrop.show{display:block}
   }
-
-  /* ── Nav ── */
   .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;margin-bottom:2px;transition:background .15s;user-select:none}
   .nav-item:hover{background:rgba(255,255,255,.12)}
   .nav-item.active{background:rgba(255,255,255,.22)}
   .nav-lbl{font-size:13px;color:rgba(255,255,255,.7);font-weight:500}
   .nav-item.active .nav-lbl{color:#fff;font-weight:700}
-
-  /* ── Topbar ── */
   .topbar{background:#fff;border-bottom:1px solid #E5E7EB;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px;flex-wrap:wrap}
   .topbar-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .menu-btn{display:none;background:none;border:none;cursor:pointer;font-size:22px;padding:4px 8px;border-radius:8px;color:#BE1522;flex-shrink:0}
-  @media(max-width:768px){
-    .menu-btn{display:flex;align-items:center}
-    .topbar{padding:12px 16px}
-  }
-
-  /* ── Content ── */
+  @media(max-width:768px){.menu-btn{display:flex;align-items:center}.topbar{padding:12px 16px}}
   .content{flex:1;padding:24px 28px;overflow-y:auto}
   @media(max-width:768px){.content{padding:16px}}
-
-  /* ── Stats grid ── */
   .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
   @media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr}}
-
-  /* ── Cards ── */
   .stat-card{background:#fff;border-radius:14px;border:1px solid #F0D4D6;padding:18px 20px;border-left-width:4px}
   .card{background:#fff;border-radius:14px;border:1px solid #F0D4D6;overflow:hidden;margin-bottom:16px}
   .card-hdr{padding:14px 20px;border-bottom:1px solid #F0D4D6;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-
-  /* ── Table ── */
   table{width:100%;border-collapse:collapse}
   th{background:#FDE8EA;font-size:11px;font-weight:700;color:#94A3B8;text-transform:uppercase;padding:11px 16px;text-align:left;white-space:nowrap}
   td{font-size:13px;color:#111827;padding:12px 16px;border-top:1px solid #FDF0F0;vertical-align:middle}
   tr:hover td{background:#FDF8F8}
-
-  /* ── Badges & Buttons ── */
   .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
   .badge.active{background:#DCFCE7;color:#16A34A}
   .badge.expired{background:#FEF3C7;color:#D97706}
@@ -190,8 +143,7 @@ const CSS = `
   .badge.warn{background:#FEF3C7;color:#D97706}
   .badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
   .btn{border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border:none;transition:opacity .15s;font-family:inherit}
-  .btn:hover{opacity:.88}
-  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn:hover{opacity:.88}.btn:disabled{opacity:.45;cursor:not-allowed}
   .btn-primary{background:#BE1522;color:#fff}
   .btn-outline{background:#fff;color:#BE1522;border:1.5px solid #BE1522}
   .btn-success{background:#DCFCE7;color:#16A34A;border:1px solid #BBF7D0}
@@ -206,13 +158,9 @@ const CSS = `
   .toggle.on{background:#BE1522}
   .toggle::after{content:'';position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:3px;left:3px;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
   .toggle.on::after{left:21px}
-
-  /* ── Search & filters ── */
   .search-row{display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
   .search-box{display:flex;align-items:center;gap:8px;background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:10px;padding:8px 14px;flex:1;min-width:180px}
   .search-box input{border:none;outline:none;background:transparent;font-size:13px;color:#111827;flex:1;font-family:inherit}
-
-  /* ── Modals ── */
   .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;padding:16px}
   .overlay.show{display:flex}
   .modal{background:#fff;border-radius:20px;width:100%;max-width:520px;padding:28px;max-height:90vh;overflow-y:auto}
@@ -227,6 +175,7 @@ const CSS = `
   .auto-box{background:#DCFCE7;border:1px solid #BBF7D0;border-radius:10px;padding:12px;font-size:12px;color:#15803D;line-height:1.6;margin-bottom:4px}
   .warn-box{background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:12px;font-size:12px;color:#92400E;line-height:1.6;margin-bottom:4px}
   .err-box{background:#FEE2E2;border:1px solid #FECACA;border-radius:10px;padding:12px;font-size:12px;color:#DC2626;line-height:1.6;margin-bottom:4px}
+  .info-box{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:12px;font-size:12px;color:#1D4ED8;line-height:1.6;margin-bottom:4px}
   .detail-grid{background:#F9F1F1;border-radius:12px;padding:14px;margin:14px 0}
   .detail-section{font-size:10px;font-weight:700;color:#BE1522;text-transform:uppercase;letter-spacing:.5px;margin:10px 0 6px}
   .detail-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #F0D4D6}
@@ -237,16 +186,17 @@ const CSS = `
   .export-bar{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid #F0D4D6;border-radius:12px;padding:10px 14px;margin-bottom:14px;flex-wrap:wrap}
   .export-bar span{font-size:12px;color:#94A3B8;font-weight:600;margin-right:4px}
   .val-hoy-box{background:#FDE8EA;border:1px solid #F0D4D6;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-
-  /* ── Import progress table ── */
+  .alerta-box{background:#FEF3C7;border:1px solid #FDE68A;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .import-table{font-size:12px;width:100%;border-collapse:collapse;margin-top:10px;max-height:180px;overflow-y:auto;display:block}
   .import-table th{background:#F9FAFB;font-weight:700;padding:6px 10px;text-align:left;border-bottom:1px solid #E5E7EB;position:sticky;top:0}
   .import-table td{padding:5px 10px;border-bottom:1px solid #F5F5F5}
-
-  /* ── File drop zone ── */
   .drop-zone{border:2px dashed #E5E7EB;border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:.2s;background:#FAFAFA;position:relative}
   .drop-zone:hover,.drop-zone.drag{border-color:#BE1522;background:#FDE8EA10}
   .drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+  .dias-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-left:6px}
+  .dias-ok{background:#DCFCE7;color:#16A34A}
+  .dias-warn{background:#FEF3C7;color:#D97706}
+  .dias-venc{background:#FEE2E2;color:#DC2626}
 `
 
 export default function DashboardPage() {
@@ -259,7 +209,7 @@ export default function DashboardPage() {
   const [secretarios,  setSecretarios]  = useState<any[]>([])
   const [validaciones, setValidaciones] = useState<any[]>([])
   const [valHoy,       setValHoy]       = useState<any[]>([])
-  const [stats, setStats] = useState({ activos:0, vencidos:0, inactivos:0, total:0 })
+  const [stats, setStats] = useState({ activos:0, vencidos:0, inactivos:0, total:0, proxVencer:0 })
   const [busqueda,      setBusqueda]     = useState('')
   const [busquedaSec,   setBusquedaSec]  = useState('')
   const [filtroEstado,  setFiltroEstado] = useState<FiltroEstado>('todos')
@@ -270,18 +220,22 @@ export default function DashboardPage() {
   const [modalImport,   setModalImport]   = useState(false)
   const [egSel,         setEgSel]         = useState<any>(null)
   const [sidebarOpen,   setSidebarOpen]   = useState(false)
+  const [verificando,   setVerificando]   = useState(false)
 
-  // ── Import state ──────────────────────────────────────────
-  const [importRows,    setImportRows]    = useState<any[]>([])
-  const [importStatus,  setImportStatus]  = useState<('idle'|'ok'|'err'|'dup')[]>([])
-  const [importMsg,     setImportMsg]     = useState<string[]>([])
-  const [importando,    setImportando]    = useState(false)
-  const [importDone,    setImportDone]    = useState(false)
+  // Import state
+  const [importRows,   setImportRows]   = useState<any[]>([])
+  const [importStatus, setImportStatus] = useState<('idle'|'ok'|'err'|'dup')[]>([])
+  const [importMsg,    setImportMsg]    = useState<string[]>([])
+  const [importando,   setImportando]   = useState(false)
+  const [importDone,   setImportDone]   = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Form egresado — incluye fecha de inicio de membresía
   const [formEg, setFormEg] = useState({
     cedula:'', nombre:'', email:'', telefono:'',
-    expedicion: fechaHoy(), vencimiento: sumar365(fechaHoy()), estado:'activo',
+    inicioMembresia: fechaHoy(),
+    vencimiento: sumar365(fechaHoy()),
+    estado:'activo',
   })
   const [formSec, setFormSec] = useState({ cedula:'', nombre:'', email:'' })
   const [saving,  setSaving]  = useState(false)
@@ -295,8 +249,34 @@ export default function DashboardPage() {
     return () => subscription.unsubscribe()
   }, [])
 
-  useEffect(() => { if (sesion) cargarTodo() }, [sesion])
-  useEffect(() => { if (sesion && tab === 'validaciones') cargarValidaciones() }, [tab, filtroFecha])
+  useEffect(() => {
+    if (sesion) verificarVencidosYCargar()
+  }, [sesion])
+
+  useEffect(() => {
+    if (sesion && tab === 'validaciones') cargarValidaciones()
+  }, [tab, filtroFecha])
+
+  // ── Verificar membresías vencidas → pasar a 'vencido' ────────
+  async function verificarVencidosYCargar() {
+    setVerificando(true)
+    const hoy = fechaHoy()
+    // Egresados activos cuya membresía ya venció → pasan a 'vencido'
+    const { data: aVencer } = await supabase
+      .from('egresados')
+      .select('id')
+      .eq('estado', 'activo')
+      .lt('fecha_vencimiento', hoy)
+
+    if (aVencer && aVencer.length > 0) {
+      await supabase
+        .from('egresados')
+        .update({ estado: 'vencido' })
+        .in('id', aVencer.map((e: any) => e.id))
+    }
+    setVerificando(false)
+    await cargarTodo()
+  }
 
   async function cargarTodo() {
     const [{ data: eg }, { data: sec }, { data: val }] = await Promise.all([
@@ -305,14 +285,21 @@ export default function DashboardPage() {
       supabase.from('validaciones_detalle').select('*').eq('fecha', fechaHoy()).order('hora_validacion', { ascending: false }).limit(5),
     ])
     const lista = eg || []
+    const hoy   = fechaHoy()
     setEgresados(lista)
     setSecretarios(sec || [])
     setValHoy(val || [])
     setStats({
-      activos:   lista.filter((e:any) => e.estado==='activo').length,
-      vencidos:  lista.filter((e:any) => e.estado==='vencido').length,
-      inactivos: lista.filter((e:any) => e.estado==='inactivo').length,
-      total:     lista.length,
+      activos:    lista.filter((e:any) => e.estado==='activo').length,
+      vencidos:   lista.filter((e:any) => e.estado==='vencido').length,
+      inactivos:  lista.filter((e:any) => e.estado==='inactivo').length,
+      total:      lista.length,
+      // Activos que vencen en los próximos 30 días
+      proxVencer: lista.filter((e:any) => {
+        if (e.estado !== 'activo' || !e.fecha_vencimiento) return false
+        const dias = diasRestantes(e.fecha_vencimiento)
+        return dias >= 0 && dias <= 30
+      }).length,
     })
   }
 
@@ -335,10 +322,7 @@ export default function DashboardPage() {
       const wb   = XLSX.read(data, { type: 'array' })
       const ws   = wb.Sheets[wb.SheetNames[0]]
       const rows = XLSX.utils.sheet_to_json<any>(ws, { defval: '' })
-
       if (!rows.length) { alert('El archivo está vacío.'); return }
-
-      // Normalizar las keys de cada fila
       const normalized = rows.map((row: any) => {
         const out: Record<string, string> = {}
         for (const key of Object.keys(row)) {
@@ -347,13 +331,11 @@ export default function DashboardPage() {
           if (campo) out[campo] = String(row[key]).trim()
         }
         return out
-      }).filter(r => r.cedula && r.nombre && r.email)   // omitir filas incompletas
-
+      }).filter(r => r.cedula && r.nombre && r.email)
       if (!normalized.length) {
-        alert('No se encontraron filas válidas. Asegúrate que el Excel tenga columnas: Cédula, Nombre completo, Correo electrónico.')
+        alert('No se encontraron filas válidas. Columnas requeridas: Cédula, Nombre completo, Correo electrónico.')
         return
       }
-
       setImportRows(normalized)
       setImportStatus(normalized.map(() => 'idle'))
       setImportMsg(normalized.map(() => ''))
@@ -368,55 +350,41 @@ export default function DashboardPage() {
     const status = [...importStatus]
     const msgs   = [...importMsg]
     const hoy    = fechaHoy()
-    const inputFecha = document.getElementById('importFechaVenc') as HTMLInputElement
-    const venc = inputFecha?.value || sumar365(hoy)
+    // Leer fecha de inicio de membresía del input
+    const inputInicio = document.getElementById('importFechaInicio') as HTMLInputElement
+    const inicio = inputInicio?.value || hoy
+    const venc   = sumar365(inicio)
 
     for (let i = 0; i < importRows.length; i++) {
-      const row = importRows[i]
+      const row    = importRows[i]
       const cedula = row.cedula.replace(/[.\s]/g, '')
-
-      // Verificar duplicado
       const { data: existing } = await supabase
         .from('egresados').select('id').eq('cedula', cedula).maybeSingle()
-
       if (existing) {
-        status[i] = 'dup'
-        msgs[i]   = 'Ya existe'
-        setImportStatus([...status])
-        setImportMsg([...msgs])
+        status[i] = 'dup'; msgs[i] = 'Ya existe'
+        setImportStatus([...status]); setImportMsg([...msgs])
         continue
       }
-
       const { error } = await supabase.from('egresados').insert({
         cedula,
-        nombre_completo:     row.nombre,
-        email:               row.email.toLowerCase(),
-        telefono:            row.telefono || null,
-        fecha_vencimiento:   venc,
-        fecha_expedicion:    hoy,
-        estado:              'activo',
+        nombre_completo:       row.nombre,
+        email:                 row.email.toLowerCase(),
+        telefono:              row.telefono || null,
+        fecha_expedicion:      inicio,
+        fecha_vencimiento:     venc,   // inicio + 365 días
+        estado:                'activo',
         requiere_cambio_clave: true,
       })
-
-      if (error) {
-        status[i] = 'err'
-        msgs[i]   = error.message
-      } else {
-        status[i] = 'ok'
-        msgs[i]   = 'Creado ✓'
-      }
-      setImportStatus([...status])
-      setImportMsg([...msgs])
+      if (error) { status[i] = 'err'; msgs[i] = error.message }
+      else        { status[i] = 'ok';  msgs[i] = `Vence: ${venc}` }
+      setImportStatus([...status]); setImportMsg([...msgs])
     }
-
-    setImportando(false)
-    setImportDone(true)
-    cargarTodo()
+    setImportando(false); setImportDone(true); cargarTodo()
   }
 
   const egresadosFiltrados = egresados.filter(eg => {
-    const matchEstado = filtroEstado==='todos' || eg.estado===filtroEstado
-    const q = busqueda.toLowerCase()
+    const matchEstado   = filtroEstado==='todos' || eg.estado===filtroEstado
+    const q             = busqueda.toLowerCase()
     const matchBusqueda = !q ||
       eg.nombre_completo?.toLowerCase().includes(q) ||
       eg.cedula?.includes(q) ||
@@ -427,34 +395,37 @@ export default function DashboardPage() {
 
   const secretariosFiltrados = secretarios.filter(sec => {
     const q = busquedaSec.toLowerCase()
-    return !q ||
-      sec.nombre_completo?.toLowerCase().includes(q) ||
-      sec.cedula?.includes(q) ||
-      (sec.email??'').toLowerCase().includes(q)
+    return !q || sec.nombre_completo?.toLowerCase().includes(q) || sec.cedula?.includes(q) || (sec.email??'').toLowerCase().includes(q)
   })
 
-  function onChangeExpedicion(val: string) { setFormEg(p => ({ ...p, expedicion:val, vencimiento:sumar365(val) })) }
+  function onChangeInicio(val: string) {
+    setFormEg(p => ({ ...p, inicioMembresia: val, vencimiento: sumar365(val) }))
+  }
 
   async function manejarLogin(e: React.FormEvent) {
     e.preventDefault()
     const { error } = await supabase.auth.signInWithPassword({ email:emailLogin.trim(), password:claveLogin })
     if (error) alert('Error: ' + error.message)
   }
-
   async function manejarLogout() { await supabase.auth.signOut(); setSesion(null) }
 
   async function crearEgresado() {
     if (!formEg.cedula || !formEg.nombre || !formEg.email) return alert('Cédula, nombre y email son obligatorios.')
     setSaving(true)
     const { error } = await supabase.from('egresados').insert({
-      cedula: formEg.cedula.replace(/[.\s]/g,''), nombre_completo:formEg.nombre,
-      email:formEg.email.toLowerCase(), telefono:formEg.telefono||null,
-      fecha_vencimiento:formEg.vencimiento, estado:formEg.estado, requiere_cambio_clave:true,
+      cedula:                formEg.cedula.replace(/[.\s]/g,''),
+      nombre_completo:       formEg.nombre,
+      email:                 formEg.email.toLowerCase(),
+      telefono:              formEg.telefono || null,
+      fecha_expedicion:      formEg.inicioMembresia,
+      fecha_vencimiento:     formEg.vencimiento,   // inicio + 365d
+      estado:                formEg.estado,
+      requiere_cambio_clave: true,
     })
     setSaving(false)
     if (error) return alert('Error: ' + error.message)
-    alert(`✓ Egresado creado\nContraseña inicial: ${formEg.cedula}`)
-    setFormEg({ cedula:'', nombre:'', email:'', telefono:'', expedicion:fechaHoy(), vencimiento:sumar365(fechaHoy()), estado:'activo' })
+    alert(`✓ Egresado creado\nMembresía: ${formEg.inicioMembresia} → ${formEg.vencimiento}\nContraseña inicial: ${formEg.cedula}`)
+    setFormEg({ cedula:'', nombre:'', email:'', telefono:'', inicioMembresia:fechaHoy(), vencimiento:sumar365(fechaHoy()), estado:'activo' })
     setModalNuevoEg(false); cargarTodo()
   }
 
@@ -471,52 +442,52 @@ export default function DashboardPage() {
     setFormSec({ cedula:'', nombre:'', email:'' }); setModalNuevoSec(false); cargarTodo()
   }
 
-  async function renovarCarnet(eg: any, fechaBase: string) {
-    const venc = sumar365(fechaBase)
-    if (!confirm(`¿Renovar carnet de ${eg.nombre_completo}?\n\nInicio: ${fechaBase}\nVence: ${venc}`)) return
-    const { error } = await supabase.from('egresados').update({ estado:'activo', fecha_vencimiento:venc }).eq('id',eg.id)
+  // Renovar = nueva fecha inicio + 365d, vuelve a activo
+  async function renovarCarnet(eg: any, fechaInicio: string) {
+    const venc = sumar365(fechaInicio)
+    if (!confirm(`¿Renovar membresía de ${eg.nombre_completo}?\n\nInicio: ${fechaInicio}\nVence: ${venc}`)) return
+    const { error } = await supabase.from('egresados')
+      .update({ estado:'activo', fecha_expedicion:fechaInicio, fecha_vencimiento:venc })
+      .eq('id', eg.id)
     if (error) return alert('Error: ' + error.message)
-    alert(`✓ Carnet renovado hasta ${venc}`)
+    alert(`✓ Membresía renovada hasta ${venc}`)
     setModalDetalle(false); cargarTodo()
   }
 
   async function cambiarEstado(eg: any, estado: string) {
     if (!confirm(`¿${estado==='activo'?'Activar':'Desactivar'} a ${eg.nombre_completo}?`)) return
-    await supabase.from('egresados').update({ estado }).eq('id',eg.id)
+    await supabase.from('egresados').update({ estado }).eq('id', eg.id)
     setModalDetalle(false); cargarTodo()
   }
 
   async function eliminarEgresado(eg: any) {
     if (!confirm(`⚠️ ELIMINAR PERMANENTE\n\n¿Eliminar a ${eg.nombre_completo}?\n\nEsta acción es IRREVERSIBLE.`)) return
-    if (!confirm(`Confirma una vez más: ¿eliminar a ${eg.nombre_completo}?`)) return
-    const { error } = await supabase.from('egresados').delete().eq('id',eg.id)
+    if (!confirm(`Confirma: ¿eliminar a ${eg.nombre_completo}?`)) return
+    const { error } = await supabase.from('egresados').delete().eq('id', eg.id)
     if (error) return alert('Error: ' + error.message)
     alert('✓ Egresado eliminado.')
     setModalDetalle(false); cargarTodo()
   }
 
   async function actualizarEmail(eg: any, email: string) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) { alert('Email inválido.'); return }
-    if (!confirm(`¿Cambiar email de ${eg.nombre_completo}?\n\nNuevo email: ${email}`)) return
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Email inválido.'); return }
+    if (!confirm(`¿Cambiar email de ${eg.nombre_completo}?\n\nNuevo: ${email}`)) return
     setSavingEmail(true)
-    const { error } = await supabase
-      .from('egresados').update({ email: email.toLowerCase() }).eq('id', eg.id)
+    const { error } = await supabase.from('egresados').update({ email: email.toLowerCase() }).eq('id', eg.id)
     if (error) { alert('Error: ' + error.message); setSavingEmail(false); return }
     const res = await fetch('/api/update-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: eg.user_id, email: email.toLowerCase() }),
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ user_id:eg.user_id, email:email.toLowerCase() }),
     })
     const result = await res.json()
-    if (!res.ok) { alert('Email actualizado en BD pero no en auth: ' + result.error); setSavingEmail(false); return }
+    if (!res.ok) { alert('Email en BD actualizado pero no en auth: ' + result.error); setSavingEmail(false); return }
     setSavingEmail(false)
-    alert('✓ Email actualizado correctamente.')
+    alert('✓ Email actualizado.')
     setEditandoEmail(false); setNuevoEmail(''); cargarTodo()
   }
 
   async function toggleSecretario(sec: any) {
-    await supabase.from('secretarios').update({ activo:!sec.activo }).eq('id',sec.id)
+    await supabase.from('secretarios').update({ activo:!sec.activo }).eq('id', sec.id)
     cargarTodo()
   }
 
@@ -526,14 +497,20 @@ export default function DashboardPage() {
   function initials(n: string) { return n.split(' ').slice(0,2).map((x:string)=>x[0]).join('').toUpperCase() }
   function nombreArchivo(p: string) { return `${p}-${fechaHoy()}` }
 
-  // Conteos de importación
+  function badgeDias(fechaVenc: string, estado: string) {
+    if (estado !== 'activo' || !fechaVenc) return null
+    const dias = diasRestantes(fechaVenc)
+    if (dias < 0)  return <span className="dias-badge dias-venc">Vencido</span>
+    if (dias <= 30) return <span className="dias-badge dias-warn">{dias}d</span>
+    return <span className="dias-badge dias-ok">{dias}d</span>
+  }
+
   const importOk  = importStatus.filter(s=>s==='ok').length
   const importErr = importStatus.filter(s=>s==='err').length
   const importDup = importStatus.filter(s=>s==='dup').length
 
   function navTo(t: Tab) { setTab(t); setSidebarOpen(false) }
 
-  // ── Login screen ──────────────────────────────────────────
   if (cargandoAuth) return (
     <div style={{ display:'flex', height:'100vh', alignItems:'center', justifyContent:'center', fontFamily:'sans-serif', background:'#F9F1F1', color:'#BE1522', fontWeight:600, fontSize:16 }}>
       Cargando ASEDUIS...
@@ -556,7 +533,7 @@ export default function DashboardPage() {
         .login-input-last{margin-bottom:24px}
         .login-btn{width:100%;background:#BE1522;color:#fff;padding:14px;border-radius:12px;border:none;font-weight:700;cursor:pointer;font-size:15px;font-family:inherit;transition:opacity .15s}
         .login-btn:hover{opacity:.88}
-        @media(max-width:480px){.login-card{padding:28px 20px;border-radius:16px}.login-logo{width:60px;height:60px;font-size:22px}.login-title{font-size:20px}.login-btn{font-size:14px;padding:13px}}
+        @media(max-width:480px){.login-card{padding:28px 20px}.login-logo{width:60px;height:60px}.login-title{font-size:20px}}
       `}</style>
       <div className="login-page">
         <form onSubmit={manejarLogin} className="login-card">
@@ -575,19 +552,17 @@ export default function DashboardPage() {
     </>
   )
 
-  // ── Main dashboard ────────────────────────────────────────
   return (
     <div className="layout">
       <style>{CSS}</style>
 
-      {/* Mobile backdrop */}
       <div className={`sidebar-backdrop ${sidebarOpen?'show':''}`} onClick={()=>setSidebarOpen(false)} />
 
-      {/* ── SIDEBAR ── */}
+      {/* SIDEBAR */}
       <aside className={`sidebar ${sidebarOpen?'open':''}`}>
         <div style={{ display:'flex', alignItems:'center', gap:12, padding:'22px 20px', borderBottom:'1px solid rgba(255,255,255,.15)' }}>
           <div style={{ width:40, height:40, background:'#fff', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, overflow:'hidden' }}>
-            <img src="/logo_black.png" alt="Logo ASEDUIS" style={{ width:'80%', height:'80%', objectFit:'contain' }} />
+            <img src="/logo_black.png" alt="ASEDUIS" style={{ width:'80%', height:'80%', objectFit:'contain' }} />
           </div>
           <div>
             <div style={{ color:'#fff', fontWeight:800, fontSize:15, letterSpacing:1 }}>ASEDUIS</div>
@@ -617,7 +592,7 @@ export default function DashboardPage() {
         </div>
       </aside>
 
-      {/* ── MAIN ── */}
+      {/* MAIN */}
       <div className="main">
         <div className="topbar">
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -626,7 +601,9 @@ export default function DashboardPage() {
               <div style={{ fontSize:18, fontWeight:700, color:'#BE1522', lineHeight:1.2 }}>
                 {{ dashboard:'Dashboard', egresados:'Egresados', secretarios:'Secretarios', validaciones:'Validaciones' }[tab]}
               </div>
-              <div style={{ fontSize:11, color:'#94A3B8', marginTop:2 }}>Sincronizado · {fechaHoy()}</div>
+              <div style={{ fontSize:11, color:'#94A3B8', marginTop:2 }}>
+                {verificando ? '⏳ Verificando membresías...' : `Sincronizado · ${fechaHoy()}`}
+              </div>
             </div>
           </div>
           <div className="topbar-actions">
@@ -642,7 +619,7 @@ export default function DashboardPage() {
               <button className="btn btn-primary btn-sm" onClick={()=>setModalNuevoEg(true)}>+ Nuevo egresado</button>
             </>}
             {tab==='validaciones' && <button className="btn btn-green btn-sm" onClick={()=>exportarExcel(validaciones, nombreArchivo('validaciones'))}>📊 Excel</button>}
-            <button className="btn btn-outline btn-sm" onClick={cargarTodo} title="Actualizar">🔄</button>
+            <button className="btn btn-outline btn-sm" onClick={()=>verificarVencidosYCargar()} title="Actualizar">🔄</button>
           </div>
         </div>
 
@@ -654,17 +631,17 @@ export default function DashboardPage() {
               <div className="stat-card" style={{ borderLeftColor:'#16A34A' }}>
                 <div style={{ fontSize:11, color:'#94A3B8', fontWeight:700, textTransform:'uppercase', marginBottom:6 }}>Activos</div>
                 <div style={{ fontSize:32, fontWeight:800, color:'#16A34A' }}>{stats.activos}</div>
-                <div style={{ fontSize:11, color:'#94A3B8', marginTop:4 }}>carnets vigentes</div>
+                <div style={{ fontSize:11, color:'#94A3B8', marginTop:4 }}>membresías vigentes</div>
               </div>
               <div className="stat-card" style={{ borderLeftColor:'#D97706' }}>
                 <div style={{ fontSize:11, color:'#94A3B8', fontWeight:700, textTransform:'uppercase', marginBottom:6 }}>Vencidos</div>
                 <div style={{ fontSize:32, fontWeight:800, color:'#D97706' }}>{stats.vencidos}</div>
-                <div style={{ fontSize:11, color:'#94A3B8', marginTop:4 }}>requieren renovación</div>
+                <div style={{ fontSize:11, color:'#94A3B8', marginTop:4 }}>membresía expirada</div>
               </div>
               <div className="stat-card" style={{ borderLeftColor:'#94A3B8' }}>
                 <div style={{ fontSize:11, color:'#94A3B8', fontWeight:700, textTransform:'uppercase', marginBottom:6 }}>Inactivos</div>
                 <div style={{ fontSize:32, fontWeight:800, color:'#94A3B8' }}>{stats.inactivos}</div>
-                <div style={{ fontSize:11, color:'#94A3B8', marginTop:4 }}>suspendidos</div>
+                <div style={{ fontSize:11, color:'#94A3B8', marginTop:4 }}>suspendidos manualmente</div>
               </div>
               <div className="stat-card" style={{ borderLeftColor:'#BE1522' }}>
                 <div style={{ fontSize:11, color:'#94A3B8', fontWeight:700, textTransform:'uppercase', marginBottom:6 }}>Total egresados</div>
@@ -672,6 +649,21 @@ export default function DashboardPage() {
                 <div style={{ fontSize:11, color:'#94A3B8', marginTop:4 }}>{secretarios.length} secretarios</div>
               </div>
             </div>
+
+            {/* Alerta próximos a vencer */}
+            {stats.proxVencer > 0 && (
+              <div className="alerta-box">
+                <span style={{fontSize:20}}>⏰</span>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:700,fontSize:13,color:'#92400E'}}>{stats.proxVencer} membresía{stats.proxVencer!==1?'s':''} vence{stats.proxVencer===1?'':'n'} en los próximos 30 días</div>
+                  <div style={{fontSize:12,color:'#B45309',marginTop:2}}>Considera contactar a estos egresados para renovación.</div>
+                </div>
+                <button className="btn btn-sm" style={{background:'#FEF3C7',color:'#92400E',border:'1px solid #FDE68A'}}
+                  onClick={()=>{ setTab('egresados'); setFiltroEstado('activo') }}>
+                  Ver →
+                </button>
+              </div>
+            )}
 
             {valHoy.length > 0 && (
               <div className="val-hoy-box">
@@ -688,11 +680,11 @@ export default function DashboardPage() {
             )}
 
             <div className="export-bar">
-              <span>Exportar:</span>
+              <span>Exportar membresías:</span>
               <button className="btn btn-green btn-sm" onClick={()=>exportarExcel(egresados, nombreArchivo('todos'))}>📊 Todos</button>
               <button className="btn btn-green btn-sm" onClick={()=>exportarExcel(egresados.filter(e=>e.estado==='activo'), nombreArchivo('activos'))}>📊 Activos</button>
               <button className="btn btn-green btn-sm" onClick={()=>exportarExcel(egresados.filter(e=>e.estado==='vencido'), nombreArchivo('vencidos'))}>📊 Vencidos</button>
-              <button className="btn btn-outline btn-sm" onClick={()=>exportarPDF(egresados, nombreArchivo('todos'))}>📄 PDF completo</button>
+              <button className="btn btn-outline btn-sm" onClick={()=>exportarPDF(egresados, nombreArchivo('todos'))}>📄 PDF</button>
             </div>
 
             <div className="card">
@@ -702,14 +694,17 @@ export default function DashboardPage() {
               </div>
               <div style={{ overflowX:'auto' }}>
                 <table>
-                  <thead><tr><th>Nombre</th><th>Cédula</th><th>Estado</th><th>Vencimiento</th><th></th></tr></thead>
+                  <thead><tr><th>Nombre</th><th>Cédula</th><th>Estado</th><th>Vencimiento membresía</th><th></th></tr></thead>
                   <tbody>
                     {egresados.slice(0,6).map(eg=>(
                       <tr key={eg.id}>
                         <td><strong>{eg.nombre_completo}</strong><br/><span style={{fontSize:11,color:'#94A3B8'}}>{eg.email}</span></td>
                         <td>{eg.cedula}</td>
                         <td><span className={ESTADO_BADGE[eg.estado]??'badge inactive'}><span className="badge-dot"></span>{eg.estado}</span></td>
-                        <td style={{color:eg.estado==='vencido'?'#D97706':'inherit',fontWeight:eg.estado==='vencido'?700:400}}>{eg.fecha_vencimiento||'—'}</td>
+                        <td>
+                          <span style={{color:eg.estado==='vencido'?'#D97706':eg.estado==='inactivo'?'#BE1522':'inherit',fontWeight:600}}>{eg.fecha_vencimiento||'—'}</span>
+                          {eg.fecha_vencimiento && badgeDias(eg.fecha_vencimiento, eg.estado)}
+                        </td>
                         <td><button className="action-btn" onClick={()=>abrirDetalle(eg)}>👁</button></td>
                       </tr>
                     ))}
@@ -736,38 +731,51 @@ export default function DashboardPage() {
             <div className="card">
               <div className="card-hdr">
                 <span style={{fontWeight:700,fontSize:14}}>Base de datos ({egresadosFiltrados.length})</span>
-                <span style={{fontSize:12,color:'#94A3B8'}}>{stats.total} total</span>
+                <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                  <span style={{fontSize:12,color:'#94A3B8'}}>{stats.total} total</span>
+                  <button className="btn btn-green btn-sm" onClick={()=>exportarExcel(egresadosFiltrados, nombreArchivo('egresados'))}>📊 Exportar</button>
+                </div>
               </div>
               <div style={{overflowX:'auto'}}>
                 <table>
-                  <thead><tr><th>Nombre</th><th>Cédula</th><th>Email</th><th>Empresa</th><th>Estado</th><th>Vencimiento</th><th>Acciones</th></tr></thead>
+                  <thead><tr><th>Nombre</th><th>Cédula</th><th>Email</th><th>Estado</th><th>Vencimiento membresía</th><th>Días restantes</th><th>Acciones</th></tr></thead>
                   <tbody>
                     {egresadosFiltrados.length===0
                       ? <tr><td colSpan={7} style={{textAlign:'center',padding:32,color:'#94A3B8'}}>No se encontraron egresados</td></tr>
-                      : egresadosFiltrados.map(eg=>(
-                        <tr key={eg.id}>
-                          <td>
-                            <div style={{display:'flex',alignItems:'center',gap:10}}>
-                              <div style={{width:34,height:34,borderRadius:'50%',background:'#FDE8EA',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:12,color:'#BE1522',flexShrink:0,overflow:'hidden'}}>
-                                {eg.foto_perfil?<img src={eg.foto_perfil} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:initials(eg.nombre_completo)}
+                      : egresadosFiltrados.map(eg=>{
+                          const dias = eg.fecha_vencimiento ? diasRestantes(eg.fecha_vencimiento) : null
+                          return (
+                          <tr key={eg.id}>
+                            <td>
+                              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                                <div style={{width:34,height:34,borderRadius:'50%',background:'#FDE8EA',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:12,color:'#BE1522',flexShrink:0,overflow:'hidden'}}>
+                                  {eg.foto_perfil?<img src={eg.foto_perfil} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:initials(eg.nombre_completo)}
+                                </div>
+                                <div><strong>{eg.nombre_completo}</strong></div>
                               </div>
-                              <div><strong>{eg.nombre_completo}</strong><br/><span style={{fontSize:11,color:'#94A3B8'}}>{eg.cedula}</span></div>
-                            </div>
-                          </td>
-                          <td style={{fontSize:12,color:'#6B7280'}}>{eg.cedula}</td>
-                          <td style={{fontSize:12,color:'#6B7280'}}>{eg.email}</td>
-                          <td style={{fontSize:12}}>{eg.empresa||'—'}</td>
-                          <td><span className={ESTADO_BADGE[eg.estado]??'badge inactive'}><span className="badge-dot"></span>{eg.estado}</span></td>
-                          <td style={{color:eg.estado==='vencido'?'#D97706':'inherit',fontWeight:eg.estado==='vencido'?700:400}}>{eg.fecha_vencimiento||'—'}</td>
-                          <td>
-                            <div style={{display:'flex',gap:2}}>
-                              <button className="action-btn" title="Ver detalle" onClick={()=>abrirDetalle(eg)}>👁</button>
-                              {eg.estado!=='inactivo'&&<button className="action-btn" title="Desactivar" onClick={()=>cambiarEstado(eg,'inactivo')}>⏸</button>}
-                              {eg.estado==='inactivo'&&<button className="action-btn" title="Activar" onClick={()=>cambiarEstado(eg,'activo')}>▶</button>}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                            </td>
+                            <td style={{fontSize:12,color:'#6B7280'}}>{eg.cedula}</td>
+                            <td style={{fontSize:12,color:'#6B7280'}}>{eg.email}</td>
+                            <td><span className={ESTADO_BADGE[eg.estado]??'badge inactive'}><span className="badge-dot"></span>{eg.estado}</span></td>
+                            <td style={{color:eg.estado==='vencido'?'#D97706':eg.estado==='inactivo'?'#BE1522':'inherit',fontWeight:600}}>{eg.fecha_vencimiento||'—'}</td>
+                            <td>
+                              {dias !== null && eg.estado === 'activo' && (
+                                <span className={`dias-badge ${dias<=0?'dias-venc':dias<=30?'dias-warn':'dias-ok'}`}>
+                                  {dias<=0 ? 'Vencido' : `${dias}d`}
+                                </span>
+                              )}
+                              {eg.estado === 'vencido' && <span className="dias-badge dias-venc">Expirado</span>}
+                              {eg.estado === 'inactivo' && <span style={{fontSize:11,color:'#94A3B8'}}>—</span>}
+                            </td>
+                            <td>
+                              <div style={{display:'flex',gap:2}}>
+                                <button className="action-btn" title="Ver / Renovar" onClick={()=>abrirDetalle(eg)}>👁</button>
+                                {eg.estado!=='inactivo'&&<button className="action-btn" title="Desactivar" onClick={()=>cambiarEstado(eg,'inactivo')}>⏸</button>}
+                                {eg.estado==='inactivo'&&<button className="action-btn" title="Activar" onClick={()=>cambiarEstado(eg,'activo')}>▶</button>}
+                              </div>
+                            </td>
+                          </tr>
+                        )})
                     }
                   </tbody>
                 </table>
@@ -794,7 +802,7 @@ export default function DashboardPage() {
                   <thead><tr><th>Nombre</th><th>Cédula</th><th>Email</th><th>Registro</th><th>Estado</th></tr></thead>
                   <tbody>
                     {secretariosFiltrados.length===0
-                      ? <tr><td colSpan={5} style={{textAlign:'center',padding:32,color:'#94A3B8'}}>No hay secretarios registrados</td></tr>
+                      ? <tr><td colSpan={5} style={{textAlign:'center',padding:32,color:'#94A3B8'}}>No hay secretarios</td></tr>
                       : secretariosFiltrados.map(sec=>(
                         <tr key={sec.id}>
                           <td>
@@ -862,60 +870,43 @@ export default function DashboardPage() {
 
       {/* ═══ MODAL IMPORTAR EXCEL ═══ */}
       <div className={`overlay ${modalImport?'show':''}`} onClick={e=>{if((e.target as any).classList?.contains('overlay')&&!importando)setModalImport(false)}}>
-        <div className="modal" style={{maxWidth:560}}>
+        <div className="modal" style={{maxWidth:580}}>
           <div className="modal-title">📥 Importar egresados desde Excel</div>
 
           {importRows.length === 0 ? <>
-            {/* Drop zone */}
             <div className="warn-box" style={{marginBottom:12}}>
-              El archivo debe tener columnas: <strong>Cédula</strong>, <strong>Nombre completo</strong>, <strong>Correo electrónico</strong>. La columna de teléfono es opcional.
+              Columnas requeridas: <strong>Cédula</strong>, <strong>Nombre completo</strong>, <strong>Correo electrónico</strong>. Teléfono es opcional.
             </div>
             <div
               className="drop-zone"
               onDragOver={e=>{e.preventDefault();(e.currentTarget as HTMLElement).classList.add('drag')}}
               onDragLeave={e=>(e.currentTarget as HTMLElement).classList.remove('drag')}
-              onDrop={e=>{
-                e.preventDefault();(e.currentTarget as HTMLElement).classList.remove('drag')
-                const f=e.dataTransfer.files[0]
-                if(f) leerArchivoExcel(f)
-              }}
+              onDrop={e=>{e.preventDefault();(e.currentTarget as HTMLElement).classList.remove('drag');const f=e.dataTransfer.files[0];if(f)leerArchivoExcel(f)}}
             >
-              <input
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                ref={fileInputRef}
-                onChange={e=>{ const f=e.target.files?.[0]; if(f) leerArchivoExcel(f) }}
-              />
+              <input type="file" accept=".xlsx,.xls,.csv" ref={fileInputRef} onChange={e=>{const f=e.target.files?.[0];if(f)leerArchivoExcel(f)}} />
               <div style={{fontSize:32,marginBottom:8}}>📂</div>
               <div style={{fontWeight:700,fontSize:14,color:'#111827',marginBottom:4}}>Arrastra el archivo aquí</div>
               <div style={{fontSize:12,color:'#94A3B8'}}>o haz clic para seleccionar · .xlsx .xls .csv</div>
             </div>
           </> : <>
-            {/* Preview & results */}
             {!importDone && (
-                <>
-                  <div className="auto-box" style={{marginBottom:10}}>
-                    Se encontraron <strong>{importRows.length}</strong> filas válidas.
+              <>
+                <div className="auto-box" style={{marginBottom:10}}>
+                  Se encontraron <strong>{importRows.length}</strong> filas válidas. Define la fecha de inicio de membresía — se sumará 1 año automáticamente.
+                </div>
+                <div style={{marginBottom:12}}>
+                  <label className="form-lbl">Fecha de inicio de membresía</label>
+                  <input type="date" id="importFechaInicio" defaultValue={fechaHoy()} className="form-inp" style={{marginTop:4}} />
+                  <div className="info-box" style={{marginTop:8}}>
+                    📅 La fecha de vencimiento se calculará automáticamente: <strong>fecha inicio + 365 días</strong>.<br/>
+                    Cuando un carnet venza, el estado pasará a <strong>Vencido</strong> automáticamente.
                   </div>
-                  <div style={{marginBottom:12}}>
-                    <label className="form-lbl">Fecha de vencimiento para todos</label>
-                    <input
-                      type="date"
-                      id="importFechaVenc"
-                      defaultValue={sumar365(fechaHoy())}
-                      className="form-inp"
-                      style={{marginTop:4}}
-                    />
-                    <div style={{fontSize:11,color:'#94A3B8',marginTop:4}}>
-                      Por defecto 365 días desde hoy. Puedes cambiarla.
-                    </div>
-                  </div>
-                </>
-              )}
-              
+                </div>
+              </>
+            )}
             {importDone && (
               <div style={{display:'flex',gap:8,marginBottom:10,flexWrap:'wrap'}}>
-                {importOk>0 && <span className="badge active">✅ {importOk} creados</span>}
+                {importOk>0  && <span className="badge active">✅ {importOk} creados</span>}
                 {importDup>0 && <span className="badge warn">⚠️ {importDup} duplicados</span>}
                 {importErr>0 && <span className="badge inactive">❌ {importErr} errores</span>}
               </div>
@@ -925,7 +916,7 @@ export default function DashboardPage() {
                 <thead>
                   <tr>
                     <th>#</th><th>Cédula</th><th>Nombre</th><th>Email</th>
-                    {importRows.some(r=>r.telefono) && <th>Teléfono</th>}
+                    {importRows.some(r=>r.telefono) && <th>Tel.</th>}
                     {importStatus.some(s=>s!=='idle') && <th>Estado</th>}
                   </tr>
                 </thead>
@@ -940,7 +931,7 @@ export default function DashboardPage() {
                       {importStatus.some(s=>s!=='idle') && (
                         <td>
                           {importStatus[i]==='idle' && <span style={{color:'#94A3B8',fontSize:11}}>Pendiente</span>}
-                          {importStatus[i]==='ok'   && <span style={{color:'#16A34A',fontWeight:700,fontSize:11}}>✓ Creado</span>}
+                          {importStatus[i]==='ok'   && <span style={{color:'#16A34A',fontWeight:700,fontSize:11}}>✓ {importMsg[i]}</span>}
                           {importStatus[i]==='dup'  && <span style={{color:'#D97706',fontWeight:700,fontSize:11}}>⚠ Duplicado</span>}
                           {importStatus[i]==='err'  && <span style={{color:'#DC2626',fontWeight:700,fontSize:11}} title={importMsg[i]}>✕ Error</span>}
                         </td>
@@ -953,28 +944,12 @@ export default function DashboardPage() {
           </>}
 
           <div style={{display:'flex',gap:10,marginTop:16,flexWrap:'wrap'}}>
-            <button
-              className="btn btn-outline"
-              style={{flex:1,justifyContent:'center'}}
-              disabled={importando}
-              onClick={()=>{
-                setImportRows([])
-                setImportStatus([])
-                setImportMsg([])
-                setImportDone(false)
-                setModalImport(false)
-                if (fileInputRef.current) fileInputRef.current.value = ''
-              }}
-            >
+            <button className="btn btn-outline" style={{flex:1,justifyContent:'center'}} disabled={importando}
+              onClick={()=>{setImportRows([]);setImportStatus([]);setImportMsg([]);setImportDone(false);setModalImport(false);if(fileInputRef.current)fileInputRef.current.value=''}}>
               {importDone ? 'Cerrar' : importRows.length ? 'Cambiar archivo' : 'Cancelar'}
             </button>
             {importRows.length > 0 && !importDone && (
-              <button
-                className="btn btn-primary"
-                style={{flex:1,justifyContent:'center'}}
-                onClick={ejecutarImportacion}
-                disabled={importando}
-              >
+              <button className="btn btn-primary" style={{flex:1,justifyContent:'center'}} onClick={ejecutarImportacion} disabled={importando}>
                 {importando ? `Importando ${importStatus.filter(s=>s!=='idle').length}/${importRows.length}...` : `✓ Importar ${importRows.length} egresados`}
               </button>
             )}
@@ -1000,10 +975,8 @@ export default function DashboardPage() {
             <div className="detail-grid">
               <div className="detail-section">Datos personales</div>
               {[
-                {k:'Teléfono',         v:egSel.telefono??'—'},
-                {k:'Fecha nacimiento', v:egSel.fecha_nacimiento??'—'},
-                {k:'Ciudad',           v:egSel.ciudad_nacimiento??'—'},
-                {k:'Dirección',        v:egSel.direccion??'—'},
+                {k:'Teléfono',  v:egSel.telefono??'—'},
+                {k:'Email',     v:egSel.email??'—'},
               ].map(r=>(
                 <div key={r.k} className="detail-row">
                   <span className="detail-key">{r.k}</span>
@@ -1011,62 +984,66 @@ export default function DashboardPage() {
                 </div>
               ))}
 
-              <div style={{marginTop:10,marginBottom:4}}>
+              {/* Editar email */}
+              <div style={{marginTop:8,marginBottom:4}}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
-                  <span style={{fontSize:10,fontWeight:700,color:'#BE1522',textTransform:'uppercase',letterSpacing:.5}}>Email</span>
+                  <span style={{fontSize:10,fontWeight:700,color:'#BE1522',textTransform:'uppercase',letterSpacing:.5}}>Cambiar email</span>
                   {!editandoEmail
                     ? <button className="btn btn-outline btn-sm" onClick={()=>{setEditandoEmail(true);setNuevoEmail(egSel.email??'')}}>✏️ Editar</button>
                     : <button className="btn btn-sm" style={{background:'#F9FAFB',color:'#6B7280',border:'1px solid #E5E7EB'}} onClick={()=>setEditandoEmail(false)}>Cancelar</button>
                   }
                 </div>
-                {!editandoEmail
-                  ? <div style={{fontSize:13,color:'#111827',padding:'8px 12px',background:'#F9F1F1',borderRadius:8}}>{egSel.email??'—'}</div>
-                  : <div style={{display:'flex',gap:8,alignItems:'center'}}>
-                      <input className="form-inp" type="email" value={nuevoEmail} onChange={e=>setNuevoEmail(e.target.value.toLowerCase())} placeholder="nuevo@correo.com" style={{flex:1,marginTop:0}} />
-                      <button className="btn btn-primary btn-sm" onClick={()=>actualizarEmail(egSel, nuevoEmail)} disabled={savingEmail || nuevoEmail===egSel.email} style={{flexShrink:0}}>
-                        {savingEmail ? '...' : '✓ Guardar'}
-                      </button>
-                    </div>
-                }
+                {editandoEmail && (
+                  <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                    <input className="form-inp" type="email" value={nuevoEmail} onChange={e=>setNuevoEmail(e.target.value.toLowerCase())} placeholder="nuevo@correo.com" style={{flex:1}} />
+                    <button className="btn btn-primary btn-sm" onClick={()=>actualizarEmail(egSel, nuevoEmail)} disabled={savingEmail || nuevoEmail===egSel.email} style={{flexShrink:0}}>
+                      {savingEmail ? '...' : '✓'}
+                    </button>
+                  </div>
+                )}
               </div>
 
-              <div className="detail-section">Carnet</div>
+              <div className="detail-section">Membresía</div>
               {[
-                {k:'Fecha expedición', v:egSel.fecha_expedicion??'—'},
-                {k:'Vencimiento',      v:egSel.fecha_vencimiento??'—', highlight:true},
+                {k:'Inicio membresía',    v:egSel.fecha_expedicion??'—'},
+                {k:'Vencimiento',         v:egSel.fecha_vencimiento??'—', highlight:true},
               ].map(r=>(
                 <div key={r.k} className="detail-row">
                   <span className="detail-key">{r.k}</span>
                   <span className="detail-val" style={(r as any).highlight?{color:'#BE1522',fontWeight:700}:{}}>{r.v}</span>
                 </div>
               ))}
-
-              {(egSel.empresa || egSel.cargo) && <>
-                <div className="detail-section">Laboral</div>
-                {egSel.empresa&&<div className="detail-row"><span className="detail-key">Empresa</span><span className="detail-val">{egSel.empresa}</span></div>}
-                {egSel.cargo  &&<div className="detail-row"><span className="detail-key">Cargo</span><span className="detail-val">{egSel.cargo}</span></div>}
-              </>}
-
-              {(egSel.titulo_pregrado || egSel.titulo_posgrado) && <>
-                <div className="detail-section">Académico</div>
-                {egSel.titulo_pregrado&&<div className="detail-row"><span className="detail-key">Pregrado</span><span className="detail-val">{egSel.titulo_pregrado}</span></div>}
-                {egSel.institucion_pregrado&&<div className="detail-row"><span className="detail-key">Institución</span><span className="detail-val">{egSel.institucion_pregrado}</span></div>}
-                {egSel.fecha_grado_pregrado&&<div className="detail-row"><span className="detail-key">Fecha grado</span><span className="detail-val">{egSel.fecha_grado_pregrado}</span></div>}
-                {egSel.titulo_posgrado&&<div className="detail-row"><span className="detail-key">Posgrado</span><span className="detail-val">{egSel.titulo_posgrado}</span></div>}
-                {egSel.institucion_posgrado&&<div className="detail-row"><span className="detail-key">Institución</span><span className="detail-val">{egSel.institucion_posgrado}</span></div>}
-              </>}
+              {egSel.fecha_vencimiento && (
+                <div className="detail-row">
+                  <span className="detail-key">Días restantes</span>
+                  <span className="detail-val">
+                    {(() => {
+                      const d = diasRestantes(egSel.fecha_vencimiento)
+                      if (d < 0)  return <span style={{color:'#DC2626',fontWeight:700}}>Expirado hace {Math.abs(d)} días</span>
+                      if (d <= 30) return <span style={{color:'#D97706',fontWeight:700}}>{d} días</span>
+                      return <span style={{color:'#16A34A',fontWeight:700}}>{d} días</span>
+                    })()}
+                  </span>
+                </div>
+              )}
             </div>
 
-            <div style={{marginBottom:12}}>
-              <label className="form-lbl">Fecha de expedición para renovar</label>
+            {/* Renovación */}
+            <div style={{background:'#F0FDF4',border:'1px solid #BBF7D0',borderRadius:12,padding:14,marginBottom:14}}>
+              <div style={{fontSize:12,fontWeight:700,color:'#15803D',marginBottom:10}}>🔄 Renovar membresía (+ 365 días)</div>
+              <label className="form-lbl" style={{marginTop:0}}>Fecha de inicio de la renovación</label>
               <input type="date" id="fechaRenovar" defaultValue={fechaHoy()} className="form-inp" style={{marginTop:4}} />
-              <div style={{fontSize:11,color:'#94A3B8',marginTop:4}}>Se calculan 365 días automáticamente</div>
+              <div style={{fontSize:11,color:'#94A3B8',marginTop:4}}>El vencimiento se calculará automáticamente.</div>
+              <button className="btn btn-success" style={{marginTop:10,width:'100%',justifyContent:'center'}}
+                onClick={()=>{const i=document.getElementById('fechaRenovar') as HTMLInputElement;renovarCarnet(egSel,i?.value||fechaHoy())}}>
+                🔄 Renovar membresía
+              </button>
             </div>
 
             <div className="actions-row">
-              <button className="btn btn-primary" onClick={()=>{const i=document.getElementById('fechaRenovar') as HTMLInputElement;renovarCarnet(egSel,i?.value||fechaHoy())}}>🔄 Renovar (365d)</button>
-              {egSel.estado!=='activo'&&<button className="btn btn-success" onClick={()=>cambiarEstado(egSel,'activo')}>▶ Activar</button>}
-              {egSel.estado!=='inactivo'&&<button className="btn btn-outline" onClick={()=>cambiarEstado(egSel,'inactivo')}>⏸ Desactivar</button>}
+              {egSel.estado!=='activo'   && <button className="btn btn-success" onClick={()=>cambiarEstado(egSel,'activo')}>▶ Activar</button>}
+              {egSel.estado!=='inactivo' && <button className="btn btn-outline"  onClick={()=>cambiarEstado(egSel,'inactivo')}>⏸ Desactivar</button>}
+              {egSel.estado!=='vencido'  && <button className="btn btn-sm" style={{background:'#FEF3C7',color:'#92400E',border:'1px solid #FDE68A'}} onClick={()=>cambiarEstado(egSel,'vencido')}>⚠ Marcar vencido</button>}
               <button className="btn btn-danger" onClick={()=>eliminarEgresado(egSel)}>🗑️ Eliminar</button>
             </div>
             <button className="btn" style={{width:'100%',justifyContent:'center',background:'#F9FAFB',color:'#6B7280',border:'1px solid #E5E7EB',marginTop:4}} onClick={()=>setModalDetalle(false)}>Cerrar</button>
@@ -1078,7 +1055,7 @@ export default function DashboardPage() {
       <div className={`overlay ${modalNuevoEg?'show':''}`} onClick={e=>{if((e.target as any).className?.includes?.('overlay'))setModalNuevoEg(false)}}>
         <div className="modal">
           <div className="modal-title">👤 Nuevo egresado</div>
-          <div className="auto-box">✅ El acceso se crea automáticamente. Contraseña inicial = cédula.</div>
+          <div className="auto-box">✅ El acceso se crea automáticamente. Contraseña inicial = cédula. La fecha de vencimiento = inicio + 365 días.</div>
           <div className="form-row2">
             <div><label className="form-lbl">Cédula *</label><input className="form-inp" placeholder="Sin puntos" value={formEg.cedula} onChange={e=>setFormEg(p=>({...p,cedula:e.target.value}))} /></div>
             <div><label className="form-lbl">Teléfono</label><input className="form-inp" placeholder="+57 300..." value={formEg.telefono} onChange={e=>setFormEg(p=>({...p,telefono:e.target.value}))} /></div>
@@ -1088,17 +1065,19 @@ export default function DashboardPage() {
           <label className="form-lbl">Email *</label>
           <input className="form-inp" type="email" placeholder="correo@dominio.com" value={formEg.email} onChange={e=>setFormEg(p=>({...p,email:e.target.value}))} />
           <div className="form-row2">
-            <div><label className="form-lbl">Fecha de expedición</label><input className="form-inp" type="date" value={formEg.expedicion} onChange={e=>onChangeExpedicion(e.target.value)} /></div>
-            <div><label className="form-lbl">Vencimiento (365d auto)</label><input className="form-inp" value={formEg.vencimiento} disabled /></div>
-          </div>
-          <div className="form-row2" style={{marginTop:4}}>
-            <div><label className="form-lbl">Estado inicial</label>
-              <select className="form-inp" value={formEg.estado} onChange={e=>setFormEg(p=>({...p,estado:e.target.value}))}>
-                <option value="activo">Activo</option><option value="inactivo">Inactivo</option>
-              </select>
+            <div>
+              <label className="form-lbl">Inicio de membresía *</label>
+              <input className="form-inp" type="date" value={formEg.inicioMembresia} onChange={e=>onChangeInicio(e.target.value)} />
+            </div>
+            <div>
+              <label className="form-lbl">Vencimiento (auto +365d)</label>
+              <input className="form-inp" value={formEg.vencimiento} disabled />
             </div>
           </div>
-          <div style={{display:'flex',gap:10,marginTop:20}}>
+          <div className="info-box" style={{marginTop:8}}>
+            📅 Membresía: <strong>{formEg.inicioMembresia}</strong> → <strong>{formEg.vencimiento}</strong>
+          </div>
+          <div style={{display:'flex',gap:10,marginTop:16}}>
             <button className="btn btn-outline" style={{flex:1,justifyContent:'center'}} onClick={()=>setModalNuevoEg(false)}>Cancelar</button>
             <button className="btn btn-primary" style={{flex:1,justifyContent:'center'}} onClick={crearEgresado} disabled={saving}>{saving?'Creando...':'✓ Crear egresado'}</button>
           </div>
@@ -1111,7 +1090,7 @@ export default function DashboardPage() {
           <div className="modal-title">🔑 Nuevo secretario</div>
           <div className="auto-box">✅ El acceso se crea automáticamente. Contraseña inicial = cédula.</div>
           <label className="form-lbl">Cédula *</label>
-          <input className="form-inp" placeholder="Sin puntos ni espacios" value={formSec.cedula} onChange={e=>setFormSec(p=>({...p,cedula:e.target.value}))} />
+          <input className="form-inp" placeholder="Sin puntos" value={formSec.cedula} onChange={e=>setFormSec(p=>({...p,cedula:e.target.value}))} />
           <label className="form-lbl">Nombre completo *</label>
           <input className="form-inp" placeholder="Nombre del funcionario" value={formSec.nombre} onChange={e=>setFormSec(p=>({...p,nombre:e.target.value}))} />
           <label className="form-lbl">Email institucional *</label>
