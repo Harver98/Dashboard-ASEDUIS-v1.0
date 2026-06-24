@@ -368,7 +368,8 @@ export default function DashboardPage() {
     const status = [...importStatus]
     const msgs   = [...importMsg]
     const hoy    = fechaHoy()
-    const venc   = sumar365(hoy)
+    const inputFecha = document.getElementById('importFechaVenc') as HTMLInputElement
+    const venc = inputFecha?.value || sumar365(hoy)
 
     for (let i = 0; i < importRows.length; i++) {
       const row = importRows[i]
@@ -892,10 +893,26 @@ export default function DashboardPage() {
           </> : <>
             {/* Preview & results */}
             {!importDone && (
-              <div className="auto-box" style={{marginBottom:10}}>
-                Se encontraron <strong>{importRows.length}</strong> filas válidas. Revisa y luego haz clic en <strong>Importar</strong>.
-              </div>
-            )}
+                <>
+                  <div className="auto-box" style={{marginBottom:10}}>
+                    Se encontraron <strong>{importRows.length}</strong> filas válidas.
+                  </div>
+                  <div style={{marginBottom:12}}>
+                    <label className="form-lbl">Fecha de vencimiento para todos</label>
+                    <input
+                      type="date"
+                      id="importFechaVenc"
+                      defaultValue={sumar365(fechaHoy())}
+                      className="form-inp"
+                      style={{marginTop:4}}
+                    />
+                    <div style={{fontSize:11,color:'#94A3B8',marginTop:4}}>
+                      Por defecto 365 días desde hoy. Puedes cambiarla.
+                    </div>
+                  </div>
+                </>
+              )}
+              
             {importDone && (
               <div style={{display:'flex',gap:8,marginBottom:10,flexWrap:'wrap'}}>
                 {importOk>0 && <span className="badge active">✅ {importOk} creados</span>}
