@@ -614,40 +614,89 @@ export default function DashboardPage() {
     </div>
   )
 
-  if (!sesion) return (
+if (!sesion) return (
     <>
       <style>{`
-        *{box-sizing:border-box}
+        *{box-sizing:border-box;margin:0;padding:0}
+        html,body{width:100%;min-height:100%}
         .login-page{
-            display:flex;
-            min-height:100vh;
-            width:100vw;
-            align-items:center;
-            justify-content:center;
-            background: linear-gradient(135deg, #BE1522 0%, #7B0D15 50%, #1a1a2e 100%);
-            font-family:"Segoe UI",system-ui,sans-serif;
-            padding:16px;
-            margin:0;
-            box-sizing:border-box;
-          }
-          .login-card{
-            background:#fff;
-            padding:40px;
-            border-radius:20px;
-            box-shadow:0 20px 60px rgba(0,0,0,.35);
-            width:100%;
-            max-width:400px
-          }
-        .login-logo{width:110px;height:110px;background:#BE1522;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:28px;font-weight:900;color:#fff;overflow:hidden}
-        .login-logo img{width:100%;height:100%;object-fit:contain;padding:10px}
-        .login-title{color:#BE1522;font-weight:800;font-size:22px;letter-spacing:1px;margin:0;text-align:center}
-        .login-sub{color:#94A3B8;font-size:13px;margin-top:4px;text-align:center;margin-bottom:28px}
-        .login-label{font-size:11px;font-weight:700;color:#94A3B8;text-transform:uppercase;display:block;margin-bottom:6px;letter-spacing:.5px}
-        .login-input{width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #E5E7EB;margin-bottom:16px;outline:none;font-size:14px;font-family:inherit;box-sizing:border-box;color:#111827;transition:border-color .15s}
-        .login-input:focus{border-color:#BE1522}
-        .login-input-last{margin-bottom:24px}
-        .login-btn{width:100%;background:#BE1522;color:#fff;padding:14px;border-radius:12px;border:none;font-weight:700;cursor:pointer;font-size:15px;font-family:inherit;transition:opacity .15s}
-        .login-btn:hover{opacity:.88}
+          display:flex;
+          min-height:100vh;
+          min-height:100dvh;
+          width:100%;
+          align-items:center;
+          justify-content:center;
+          background: linear-gradient(135deg, #BE1522 0%, #7B0D15 50%, #1a1a2e 100%);
+          font-family:"Segoe UI",system-ui,sans-serif;
+          padding:16px;
+          overflow-x:hidden;
+        }
+        .login-card{
+          background:#fff;
+          padding:40px 36px;
+          border-radius:22px;
+          box-shadow:0 24px 70px rgba(0,0,0,.4);
+          width:100%;
+          max-width:400px;
+          position:relative;
+          overflow:hidden;
+        }
+        .login-card::before{
+          content:'';
+          position:absolute;
+          top:0;left:0;right:0;
+          height:5px;
+          background:linear-gradient(90deg,#BE1522,#E63946,#BE1522);
+        }
+        .login-logo{
+          width:100px;height:100px;
+          background:linear-gradient(135deg,#BE1522,#8B0F1A);
+          border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          margin:0 auto 16px;
+          font-size:28px;font-weight:900;color:#fff;
+          overflow:hidden;
+          box-shadow:0 8px 20px rgba(190,21,34,.35);
+        }
+        .login-logo img{width:100%;height:100%;object-fit:contain;padding:12px}
+        .login-title{color:#BE1522;font-weight:800;font-size:24px;letter-spacing:.5px;margin:0;text-align:center}
+        .login-sub{color:#94A3B8;font-size:13px;margin-top:5px;text-align:center;margin-bottom:30px}
+        .login-label{font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;display:block;margin-bottom:6px;letter-spacing:.5px}
+        .login-input-wrap{margin-bottom:16px}
+        .login-input-wrap:last-of-type{margin-bottom:24px}
+        .login-input{
+          width:100%;
+          padding:13px 14px;
+          border-radius:12px;
+          border:1.5px solid #E5E7EB;
+          outline:none;
+          font-size:14px;
+          font-family:inherit;
+          box-sizing:border-box;
+          color:#111827;
+          background:#F9FAFB;
+          transition:border-color .15s, background .15s;
+        }
+        .login-input:focus{border-color:#BE1522;background:#fff}
+        .login-btn{
+          width:100%;
+          background:linear-gradient(135deg,#BE1522,#9A1019);
+          color:#fff;
+          padding:14px;
+          border-radius:12px;
+          border:none;
+          font-weight:700;
+          cursor:pointer;
+          font-size:15px;
+          font-family:inherit;
+          transition:opacity .15s, transform .1s;
+        }
+        .login-btn:hover{opacity:.92}
+        .login-btn:active{transform:scale(.98)}
+        @media (max-width:400px){
+          .login-card{padding:32px 24px;border-radius:18px}
+          .login-logo{width:84px;height:84px}
+        }
       `}</style>
       <div className="login-page">
         <form onSubmit={manejarLogin} className="login-card">
@@ -656,16 +705,20 @@ export default function DashboardPage() {
           </div>
           <h2 className="login-title">ASEDUIS</h2>
           <p className="login-sub">Panel Administrativo</p>
-          <label className="login-label">Correo electrónico</label>
-          <input type="email" required className="login-input" placeholder="admin@aseduis.com" value={emailLogin} onChange={e=>setEmailLogin(e.target.value)} />
-          <label className="login-label">Contraseña</label>
-          <input type="password" required className="login-input login-input-last" placeholder="••••••••" value={claveLogin} onChange={e=>setClaveLogin(e.target.value)} />
+          <div className="login-input-wrap">
+            <label className="login-label">Correo electrónico</label>
+            <input type="email" required className="login-input" placeholder="admin@aseduis.com" value={emailLogin} onChange={e=>setEmailLogin(e.target.value)} />
+          </div>
+          <div className="login-input-wrap">
+            <label className="login-label">Contraseña</label>
+            <input type="password" required className="login-input" placeholder="••••••••" value={claveLogin} onChange={e=>setClaveLogin(e.target.value)} />
+          </div>
           <button type="submit" className="login-btn">Ingresar al sistema</button>
         </form>
       </div>
     </>
   )
-
+  
   return (
     <div className="layout">
       <style>{CSS}</style>
