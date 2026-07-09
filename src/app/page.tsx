@@ -583,6 +583,16 @@ export default function DashboardPage() {
     await supabase.from('secretarios').update({activo:!sec.activo}).eq('id',sec.id);cargarTodo()
   }
 
+    async function eliminarSecretario(sec:any) {
+    if (!confirm(`⚠️ ¿Eliminar permanentemente a ${sec.nombre_completo}?`)) return
+    if (!confirm(`Confirma de nuevo: ¿eliminar a ${sec.nombre_completo}? Esta acción es IRREVERSIBLE.`)) return
+    const {error}=await supabase.from('secretarios').delete().eq('id',sec.id)
+    if (error) return alert('Error: '+error.message)
+    alert('✓ Secretario eliminado.')
+    cargarTodo()
+  }
+
+
   function abrirDetalle(eg:any) { setEgSel(eg);setModalDetalle(true);setDetTab('info');setEditandoEmail(false);setNuevoEmail(eg.email??'') }
   function initials(n:string) { return n.split(' ').slice(0,2).map((x:string)=>x[0]).join('').toUpperCase() }
   function nombreArchivo(p:string) { return `ASEDUIS-${p}-${fechaHoy()}` }
@@ -1027,10 +1037,10 @@ if (!sesion) return (
               </div>
               <div style={{overflowX:'auto'}}>
                 <table>
-                  <thead><tr><th>Nombre</th><th>Cédula</th><th>Email</th><th>Registro</th><th>Estado</th></tr></thead>
+                  <thead><tr><th>Nombre</th><th>Cédula</th><th>Email</th><th>Registro</th><th>Estado</th><th>Acciones</th></tr></thead>
                   <tbody>
                     {secretariosFiltrados.length===0
-                      ?<tr><td colSpan={5} style={{textAlign:'center',padding:32,color:'#94A3B8'}}>No hay secretarios</td></tr>
+                      ?<tr><td colSpan={6} style={{textAlign:'center',padding:32,color:'#94A3B8'}}>No hay secretarios</td></tr>
                       :secretariosFiltrados.map(sec=>(
                       <tr key={sec.id}>
                         <td>
@@ -1047,6 +1057,9 @@ if (!sesion) return (
                             <button className={`toggle ${sec.activo?'on':''}`} onClick={()=>toggleSecretario(sec)} />
                             <span style={{fontSize:12,fontWeight:600,color:sec.activo?'#16A34A':'#94A3B8'}}>{sec.activo?'Activo':'Inactivo'}</span>
                           </div>
+                        </td>
+                        <td>
+                          <button className="action-btn" title="Eliminar secretario" onClick={()=>eliminarSecretario(sec)}>🗑️</button>
                         </td>
                       </tr>
                     ))}
