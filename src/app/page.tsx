@@ -586,8 +586,13 @@ export default function DashboardPage() {
     async function eliminarSecretario(sec:any) {
     if (!confirm(`⚠️ ¿Eliminar permanentemente a ${sec.nombre_completo}?`)) return
     if (!confirm(`Confirma de nuevo: ¿eliminar a ${sec.nombre_completo}? Esta acción es IRREVERSIBLE.`)) return
-    const {error}=await supabase.from('secretarios').delete().eq('id',sec.id)
-    if (error) return alert('Error: '+error.message)
+    const res = await fetch('/api/eliminar-secretario', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secretarioId: sec.id, userId: sec.user_id }),
+    })
+    const data = await res.json()
+    if (!res.ok) return alert('Error: ' + data.error)
     alert('✓ Secretario eliminado.')
     cargarTodo()
   }
