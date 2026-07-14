@@ -463,21 +463,20 @@ export default function DashboardPage() {
           if (campo) out[campo]=String(row[key]).trim()
         }
         return out
-      }).filter(r=>r.cedula&&r.nombre&&r.email)
+      }).filter(r=>r.cedula&&r.nombre&&r.email).map(r=>({...r, fechaInicio: fechaHoy()}))
       if (!normalized.length) { alert('Sin filas válidas. Columnas requeridas: Cédula, Nombre, Email.'); return }
       setImportRows(normalized); setImportStatus(normalized.map(()=>'idle')); setImportMsg(normalized.map(()=>'')); setImportDone(false); setModalImport(true)
     }
     reader.readAsArrayBuffer(file)
   }
 
-  async function ejecutarImportacion() {
+    async function ejecutarImportacion() {
     setImportando(true)
     const status=[...importStatus]; const msgs=[...importMsg]
-    const inputInicio=document.getElementById('importFechaInicio') as HTMLInputElement
-    const inicio=inputInicio?.value||fechaHoy()
-    const venc=sumar365(inicio)
     for (let i=0;i<importRows.length;i++) {
       const row=importRows[i]; const cedula=row.cedula.replace(/[.\s]/g,'')
+      const inicio = row.fechaInicio || fechaHoy()
+      const venc=sumar365(inicio)
       const {data:existing}=await supabase.from('egresados').select('id').eq('cedula',cedula).maybeSingle()
       if (existing) { status[i]='dup';msgs[i]='Ya existe';setImportStatus([...status]);setImportMsg([...msgs]);continue }
       const {error}=await supabase.from('egresados').insert({
@@ -1141,10 +1140,22 @@ if (!sesion) return (
             </div>
           </>:<>
             {!importDone&&<>
-              <div className="auto-box" style={{marginBottom:10}}>Se encontraron <strong>{importRows.length}</strong> filas válidas. Define la fecha de inicio de membresía.</div>
-              <label className="form-lbl">Fecha de inicio de membresía</label>
-              <input type="date" id="importFechaInicio" defaultValue={fechaHoy()} className="form-inp" style={{marginTop:4}} />
-              <div className="info-box" style={{marginTop:8}}>📅 Vencimiento = fecha inicio + 365 días (automático)</div>
+              <div className="auto-box" style={{marginBottom:10}}>Se encontraron <strong>{importRows.length}</strong> filas válidas. Define la fecha de inicio de membresía para cada egresado en la tabla de abajo.</div>
+              <div style={{display:'flex',gap:8,alignItems:'flex-end',marginBottom:10,flexWrap:'wrap'}}>
+                <div style={{flex:1,minWidth:160}}>
+                  <label className="form-lbl" style={{marginTop:0}}>Aplicar la misma fecha a todos (opcional)</label>
+                  <input type="date" id="importFechaBulk" defaultValue={fechaHoy()} className="form-inp" />
+                </div>
+                <button className="btn btn-gray btn-sm" style={{marginBottom:1}}
+                  onClick={()=>{
+                    const bulk=document.getElementById('importFechaBulk') as HTMLInputElement
+                    const val=bulk?.value||fechaHoy()
+                    setImportRows(prev=>prev.map(r=>({...r,fechaInicio:val})))
+                  }}>
+                  ⬇ Aplicar a todos
+                </button>
+              </div>
+              <div className="info-box" style={{marginTop:0}}>📅 Vencimiento = fecha inicio + 365 días (automático, por fila)</div>
             </>}
             {importDone&&(
               <div style={{display:'flex',gap:8,marginBottom:10,flexWrap:'wrap'}}>
@@ -1155,7 +1166,7 @@ if (!sesion) return (
             )}
             <div className="import-scroll">
               <table className="import-table">
-                <thead><tr><th>#</th><th>Cédula</th><th>Nombre</th><th>Email</th>{importStatus.some(s=>s!=='idle')&&<th>Estado</th>}</tr></thead>
+                <thead><tr><th>#</th><th>Cédula</th><th>Nombre</th><th>Email</th><th>Fecha inicio</th>{importStatus.some(s=>s!=='idle')&&<th>Estado</th>}</tr></thead>
                 <tbody>
                   {importRows.map((r,i)=>(
                     <tr key={i} style={{background:importStatus[i]==='ok'?'#F0FDF4':importStatus[i]==='err'?'#FEF2F2':importStatus[i]==='dup'?'#FFFBEB':''}}>
@@ -1163,6 +1174,18 @@ if (!sesion) return (
                       <td>{r.cedula}</td>
                       <td style={{fontWeight:600}}>{r.nombre}</td>
                       <td style={{fontSize:11,color:'#6B7280'}}>{r.email}</td>
+                      <td>
+                        <input
+                          type="date"
+                          value={r.fechaInicio||fechaHoy()}
+                          disabled={importando||importDone}
+                          onChange={e=>{
+                            const val=e.target.value
+                            setImportRows(prev=>prev.map((row,idx)=>idx===i?{...row,fechaInicio:val}:row))
+                          }}
+                          style={{fontSize:11,padding:'4px 6px',border:'1px solid #E5E7EB',borderRadius:6,fontFamily:'inherit',width:130}}
+                        />
+                      </td>
                       {importStatus.some(s=>s!=='idle')&&<td>
                         {importStatus[i]==='idle'&&<span style={{color:'#94A3B8',fontSize:11}}>Pendiente</span>}
                         {importStatus[i]==='ok'&&<span style={{color:'#16A34A',fontWeight:700,fontSize:11}}>✓ {importMsg[i]}</span>}
