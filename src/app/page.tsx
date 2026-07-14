@@ -487,9 +487,9 @@ export default function DashboardPage() {
       if (error) { status[i]='err';msgs[i]=error.message } else { status[i]='ok';msgs[i]=`Vence: ${venc}` }
       setImportStatus([...status]);setImportMsg([...msgs])
     }
-    setImportando(false);setImportDone(true);cargarTodo()
+    setImportando(false);setImportDone(true);verificarVencidosYCargar()
   }
-
+  
   const egresadosFiltrados = egresados.filter(eg => {
     const matchEstado=filtroEstado==='todos'||eg.estado===filtroEstado
     const q=busqueda.toLowerCase()
@@ -532,7 +532,7 @@ export default function DashboardPage() {
     if (error) return alert('Error: '+error.message)
     alert(`✓ Egresado creado\nMembresía: ${formEg.inicioMembresia} → ${formEg.vencimiento}\nContraseña inicial: ${formEg.cedula}`)
     setFormEg({cedula:'',nombre:'',email:'',telefono:'',inicioMembresia:fechaHoy(),vencimiento:sumar365(fechaHoy()),estado:'activo',ciudad_nacimiento:'',direccion:'',fecha_nacimiento:'',titulo_pregrado:'',institucion_pregrado:'',fecha_grado_pregrado:'',titulo_posgrado:'',institucion_posgrado:'',fecha_grado_posgrado:'',empresa:'',cargo:'',hobbies:''})
-    setModalNuevoEg(false);cargarTodo()
+    setModalNuevoEg(false);verificarVencidosYCargar()
   }
 
   async function crearSecretario() {
