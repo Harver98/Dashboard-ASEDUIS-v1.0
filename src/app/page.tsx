@@ -388,7 +388,7 @@ export default function DashboardPage() {
     cedula:'', nombre:'', email:'', telefono:'',
     inicioMembresia: fechaHoy(),
     vencimiento: sumar365(fechaHoy()),
-    estado:'activo',
+    estado:'inactivo',
     ciudad_nacimiento:'', direccion:'', fecha_nacimiento:'',
     titulo_pregrado:'', institucion_pregrado:'', fecha_grado_pregrado:'',
     titulo_posgrado:'', institucion_posgrado:'', fecha_grado_posgrado:'',
@@ -482,7 +482,7 @@ export default function DashboardPage() {
       const {error}=await supabase.from('egresados').insert({
         cedula, nombre_completo:row.nombre, email:row.email.toLowerCase(),
         telefono:row.telefono||null, fecha_expedicion:inicio, fecha_vencimiento:venc,
-        estado:'activo', requiere_cambio_clave:true,
+        estado:'inactivo', requiere_cambio_clave:true,
       })
       if (error) { status[i]='err';msgs[i]=error.message } else { status[i]='ok';msgs[i]=`Vence: ${venc}` }
       setImportStatus([...status]);setImportMsg([...msgs])
@@ -531,7 +531,7 @@ export default function DashboardPage() {
     setSaving(false)
     if (error) return alert('Error: '+error.message)
     alert(`✓ Egresado creado\nMembresía: ${formEg.inicioMembresia} → ${formEg.vencimiento}\nContraseña inicial: ${formEg.cedula}`)
-    setFormEg({cedula:'',nombre:'',email:'',telefono:'',inicioMembresia:fechaHoy(),vencimiento:sumar365(fechaHoy()),estado:'activo',ciudad_nacimiento:'',direccion:'',fecha_nacimiento:'',titulo_pregrado:'',institucion_pregrado:'',fecha_grado_pregrado:'',titulo_posgrado:'',institucion_posgrado:'',fecha_grado_posgrado:'',empresa:'',cargo:'',hobbies:''})
+    setFormEg({cedula:'',nombre:'',email:'',telefono:'',inicioMembresia:fechaHoy(),vencimiento:sumar365(fechaHoy()),estado:'inactivo',ciudad_nacimiento:'',direccion:'',fecha_nacimiento:'',titulo_pregrado:'',institucion_pregrado:'',fecha_grado_pregrado:'',titulo_posgrado:'',institucion_posgrado:'',fecha_grado_posgrado:'',empresa:'',cargo:'',hobbies:''})
     setModalNuevoEg(false);verificarVencidosYCargar()
   }
 
