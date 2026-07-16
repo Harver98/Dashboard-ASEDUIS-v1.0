@@ -371,6 +371,7 @@ export default function DashboardPage() {
   const [modalDetalle,  setModalDetalle]  = useState(false)
   const [modalImport,   setModalImport]   = useState(false)
   const [egSel,         setEgSel]         = useState<any>(null)
+  const [fotoAmpliada,  setFotoAmpliada]  = useState<any>(null)
   const [detTab,        setDetTab]        = useState<'info'|'membresia'|'estudios'|'laboral'>('info')
   const [sidebarOpen,   setSidebarOpen]   = useState(false)
   const [verificando,   setVerificando]   = useState(false)
@@ -890,12 +891,19 @@ if (!sesion) return (
                 <div style={{padding:'8px 20px'}}>
                   {fotosPendientes.map(eg=>(
                     <div key={eg.id} style={{display:'flex',alignItems:'center',gap:14,padding:'10px 0',borderBottom:'1px solid #FDF0F0',flexWrap:'wrap'}}>
-                      <img src={eg.foto_perfil_pendiente} alt="" style={{width:56,height:56,borderRadius:12,objectFit:'cover',border:'1px solid #E5E7EB',flexShrink:0}} />
+                      <img
+                        src={eg.foto_perfil_pendiente}
+                        alt=""
+                        onClick={()=>setFotoAmpliada(eg)}
+                        style={{width:56,height:56,borderRadius:12,objectFit:'cover',border:'1px solid #E5E7EB',flexShrink:0,cursor:'pointer'}}
+                        title="Ver foto en grande"
+                      />
                       <div style={{flex:1,minWidth:120}}>
                         <div style={{fontWeight:600,fontSize:13}}>{eg.nombre_completo}</div>
                         <div style={{fontSize:11,color:'#94A3B8'}}>CC {eg.cedula}</div>
                       </div>
                       <div style={{display:'flex',gap:6}}>
+                        <button className="btn btn-outline btn-sm" onClick={()=>setFotoAmpliada(eg)}>🔍 Ver</button>
                         <button className="btn btn-success btn-sm" onClick={()=>aprobarFoto(eg)}>✓ Aprobar</button>
                         <button className="btn btn-danger btn-sm" onClick={()=>rechazarFoto(eg)}>✕ Rechazar</button>
                       </div>
@@ -1449,6 +1457,26 @@ if (!sesion) return (
             <button className="btn btn-outline" style={{flex:1,justifyContent:'center'}} onClick={()=>setModalNuevoSec(false)}>Cancelar</button>
             <button className="btn btn-primary" style={{flex:1,justifyContent:'center'}} onClick={crearSecretario} disabled={saving}>{saving?'Creando...':'✓ Crear secretario'}</button>
           </div>
+        </div>
+      </div>
+
+      {/* ══════════ MODAL FOTO AMPLIADA ══════════ */}
+      <div className={`overlay ${fotoAmpliada?'show':''}`} onClick={e=>{if((e.target as any).classList?.contains('overlay'))setFotoAmpliada(null)}}>
+        <div className="modal" style={{maxWidth:480,textAlign:'center'}}>
+          {fotoAmpliada&&<>
+            <div className="modal-title" style={{justifyContent:'center'}}>📸 {fotoAmpliada.nombre_completo}</div>
+            <div style={{fontSize:12,color:'#94A3B8',marginBottom:14}}>CC {fotoAmpliada.cedula}</div>
+            <img
+              src={fotoAmpliada.foto_perfil_pendiente}
+              alt=""
+              style={{width:'100%',maxHeight:420,objectFit:'contain',borderRadius:14,border:'1px solid #E5E7EB',background:'#FAFAFA'}}
+            />
+            <div style={{display:'flex',gap:10,marginTop:20}}>
+              <button className="btn btn-outline" style={{flex:1,justifyContent:'center'}} onClick={()=>setFotoAmpliada(null)}>Cerrar</button>
+              <button className="btn btn-danger" style={{flex:1,justifyContent:'center'}} onClick={()=>{rechazarFoto(fotoAmpliada);setFotoAmpliada(null)}}>✕ Rechazar</button>
+              <button className="btn btn-success" style={{flex:1,justifyContent:'center'}} onClick={()=>{aprobarFoto(fotoAmpliada);setFotoAmpliada(null)}}>✓ Aprobar</button>
+            </div>
+          </>}
         </div>
       </div>
 
