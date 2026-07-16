@@ -497,6 +497,8 @@ export default function DashboardPage() {
     return !q||sec.nombre_completo?.toLowerCase().includes(q)||sec.cedula?.includes(q)||(sec.email??'').toLowerCase().includes(q)
   })
 
+  const fotosPendientes = egresados.filter(eg => eg.foto_perfil_estado === 'pendiente')
+
   function updFormEg(k:string,v:string) { setFormEg(p=>({...p,[k]:v})) }
 
   async function manejarLogin(e:React.FormEvent) {
@@ -587,6 +589,30 @@ export default function DashboardPage() {
     const data = await res.json()
     if (!res.ok) return alert('Error: ' + data.error)
     alert('✓ Secretario eliminado.')
+    cargarTodo()
+  }
+
+  async function aprobarFoto(eg:any) {
+    if (!confirm(`¿Aprobar la foto de perfil de ${eg.nombre_completo}?`)) return
+    const {error}=await supabase.from('egresados').update({
+      foto_perfil: eg.foto_perfil_pendiente,
+      foto_perfil_pendiente: null,
+      foto_perfil_estado: 'aprobada',
+      foto_perfil_motivo_rechazo: null,
+    }).eq('id', eg.id)
+    if (error) return alert('Error: '+error.message)
+    cargarTodo()
+  }
+
+  async function rechazarFoto(eg:any) {
+    const motivo = prompt(`Motivo de rechazo para ${eg.nombre_completo}:`, 'La foto debe ser de frente y con fondo blanco.')
+    if (motivo===null) return
+    const {error}=await supabase.from('egresados').update({
+      foto_perfil_pendiente: null,
+      foto_perfil_estado: 'rechazada',
+      foto_perfil_motivo_rechazo: motivo||'La foto no cumple los requisitos.',
+    }).eq('id', eg.id)
+    if (error) return alert('Error: '+error.message)
     cargarTodo()
   }
 
@@ -853,6 +879,29 @@ if (!sesion) return (
                   </div>
                 ))}
                 <button className="btn btn-outline btn-sm" style={{marginLeft:'auto'}} onClick={()=>setTab('validaciones')}>Ver todas →</button>
+              </div>
+            )}
+
+            {fotosPendientes.length>0&&(
+              <div className="card" style={{marginBottom:16}}>
+                <div className="card-hdr">
+                  <span className="card-hdr-title">📸 Fotos pendientes de revisión ({fotosPendientes.length})</span>
+                </div>
+                <div style={{padding:'8px 20px'}}>
+                  {fotosPendientes.map(eg=>(
+                    <div key={eg.id} style={{display:'flex',alignItems:'center',gap:14,padding:'10px 0',borderBottom:'1px solid #FDF0F0',flexWrap:'wrap'}}>
+                      <img src={eg.foto_perfil_pendiente} alt="" style={{width:56,height:56,borderRadius:12,objectFit:'cover',border:'1px solid #E5E7EB',flexShrink:0}} />
+                      <div style={{flex:1,minWidth:120}}>
+                        <div style={{fontWeight:600,fontSize:13}}>{eg.nombre_completo}</div>
+                        <div style={{fontSize:11,color:'#94A3B8'}}>CC {eg.cedula}</div>
+                      </div>
+                      <div style={{display:'flex',gap:6}}>
+                        <button className="btn btn-success btn-sm" onClick={()=>aprobarFoto(eg)}>✓ Aprobar</button>
+                        <button className="btn btn-danger btn-sm" onClick={()=>rechazarFoto(eg)}>✕ Rechazar</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
