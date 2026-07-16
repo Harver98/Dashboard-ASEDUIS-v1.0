@@ -1215,6 +1215,7 @@ if (!sesion) return (
                   {k:'Teléfono',v:egSel.telefono??'—'},
                   {k:'Fecha nacimiento',v:fmtFechaLegible(egSel.fecha_nacimiento)},
                   {k:'Ciudad nacimiento',v:egSel.ciudad_nacimiento??'—'},
+                  {k:'Ciudad de residencia',v:egSel.ciudad_residencia??'—'},
                   {k:'Dirección',v:egSel.direccion??'—'},
                   {k:'Registro',v:fmtFechaLegible(egSel.created_at?.split('T')[0])},
                   {k:'Hobbies',v:egSel.hobbies??'—'},
