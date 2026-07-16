@@ -386,9 +386,6 @@ export default function DashboardPage() {
   // Form egresado completo
   const [formEg, setFormEg] = useState({
     cedula:'', nombre:'', email:'', telefono:'',
-    inicioMembresia: fechaHoy(),
-    vencimiento: sumar365(fechaHoy()),
-    estado:'inactivo',
     ciudad_nacimiento:'', direccion:'', fecha_nacimiento:'',
     titulo_pregrado:'', institucion_pregrado:'', fecha_grado_pregrado:'',
     titulo_posgrado:'', institucion_posgrado:'', fecha_grado_posgrado:'',
@@ -500,7 +497,6 @@ export default function DashboardPage() {
     return !q||sec.nombre_completo?.toLowerCase().includes(q)||sec.cedula?.includes(q)||(sec.email??'').toLowerCase().includes(q)
   })
 
-  function onChangeInicio(val:string) { setFormEg(p=>({...p,inicioMembresia:val,vencimiento:sumar365(val)})) }
   function updFormEg(k:string,v:string) { setFormEg(p=>({...p,[k]:v})) }
 
   async function manejarLogin(e:React.FormEvent) {
@@ -516,8 +512,8 @@ export default function DashboardPage() {
     const {error}=await supabase.from('egresados').insert({
       cedula:formEg.cedula.replace(/[.\s]/g,''), nombre_completo:formEg.nombre,
       email:formEg.email.toLowerCase(), telefono:formEg.telefono||null,
-      fecha_expedicion:formEg.inicioMembresia, fecha_vencimiento:formEg.vencimiento,
-      estado:formEg.estado, requiere_cambio_clave:true,
+      fecha_expedicion:null, fecha_vencimiento:null,
+      estado:'inactivo', requiere_cambio_clave:true,
       ciudad_nacimiento:formEg.ciudad_nacimiento||null, direccion:formEg.direccion||null,
       fecha_nacimiento:formEg.fecha_nacimiento||null,
       titulo_pregrado:formEg.titulo_pregrado||null, institucion_pregrado:formEg.institucion_pregrado||null,
@@ -528,9 +524,9 @@ export default function DashboardPage() {
     })
     setSaving(false)
     if (error) return alert('Error: '+error.message)
-    alert(`✓ Egresado creado\nMembresía: ${formEg.inicioMembresia} → ${formEg.vencimiento}\nContraseña inicial: ${formEg.cedula}`)
-    setFormEg({cedula:'',nombre:'',email:'',telefono:'',inicioMembresia:fechaHoy(),vencimiento:sumar365(fechaHoy()),estado:'inactivo',ciudad_nacimiento:'',direccion:'',fecha_nacimiento:'',titulo_pregrado:'',institucion_pregrado:'',fecha_grado_pregrado:'',titulo_posgrado:'',institucion_posgrado:'',fecha_grado_posgrado:'',empresa:'',cargo:'',hobbies:''})
-    setModalNuevoEg(false);verificarVencidosYCargar()
+    alert(`✓ Egresado creado como inactivo\nContraseña inicial: ${formEg.cedula}\n\nActiva su membresía desde el detalle del egresado cuando corresponda.`)
+    setFormEg({cedula:'',nombre:'',email:'',telefono:'',ciudad_nacimiento:'',direccion:'',fecha_nacimiento:'',titulo_pregrado:'',institucion_pregrado:'',fecha_grado_pregrado:'',titulo_posgrado:'',institucion_posgrado:'',fecha_grado_posgrado:'',empresa:'',cargo:'',hobbies:''})
+    setModalNuevoEg(false);cargarTodo()
   }
 
   async function crearSecretario() {
@@ -1341,7 +1337,7 @@ if (!sesion) return (
       <div className={`overlay ${modalNuevoEg?'show':''}`} onClick={e=>{if((e.target as any).className?.includes?.('overlay'))setModalNuevoEg(false)}}>
         <div className="modal modal-wide">
           <div className="modal-title">👤 Nuevo egresado</div>
-          <div className="auto-box">Contraseña inicial = cédula. Vencimiento = inicio membresía + 365 días.</div>
+          <div className="auto-box">Contraseña inicial = cédula. El egresado se crea como <strong>inactivo</strong>, sin fecha de membresía — actívalo desde su detalle cuando corresponda.</div>
 
           <div className="form-section">Datos básicos *</div>
           <div className="form-row2">
@@ -1352,10 +1348,7 @@ if (!sesion) return (
           <input className="form-inp" placeholder="Nombres y apellidos" value={formEg.nombre} onChange={e=>updFormEg('nombre',e.target.value)} />
           <label className="form-lbl">Email *</label>
           <input className="form-inp" type="email" placeholder="correo@dominio.com" value={formEg.email} onChange={e=>updFormEg('email',e.target.value)} />
-          <div className="form-row2">
-            <div><label className="form-lbl">Inicio membresía *</label><input className="form-inp" type="date" value={formEg.inicioMembresia} onChange={e=>onChangeInicio(e.target.value)} /></div>
-            <div><label className="form-lbl">Vencimiento (auto +365d)</label><input className="form-inp" value={formEg.vencimiento} disabled /></div>
-          </div>
+
 
           <div className="form-section">Datos personales</div>
           <div className="form-row3">
