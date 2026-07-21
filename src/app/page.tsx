@@ -34,21 +34,25 @@ function fmtFechaLegible(str: string | null) {
 // ── Exportar Excel COMPLETO ───────────────────────────────────
 function exportarExcel(datos: any[], nombre: string) {
   const cols = [
-    'cedula','nombre_completo','email','telefono','estado',
-    'fecha_expedicion','fecha_vencimiento','created_at',
-    'ciudad_nacimiento','direccion','fecha_nacimiento',
-    'titulo_pregrado','institucion_pregrado','fecha_grado_pregrado',
-    'titulo_posgrado','institucion_posgrado','fecha_grado_posgrado',
-    'empresa','cargo','hobbies',
-  ]
+  'cedula','nombre_completo','email','telefono','estado',
+  'fecha_expedicion','fecha_vencimiento','created_at',
+  'ciudad_nacimiento','direccion','fecha_nacimiento',
+  'programa_1','programa_2','programa_3',
+  'estudio_ext_1_titulo','estudio_ext_1_institucion','estudio_ext_1_fecha',
+  'estudio_ext_2_titulo','estudio_ext_2_institucion','estudio_ext_2_fecha',
+  'estudio_ext_3_titulo','estudio_ext_3_institucion','estudio_ext_3_fecha',
+  'empresa','cargo','hobbies',
+]
   const headers = [
-    'Cédula','Nombre completo','Email','Teléfono','Estado',
-    'Inicio membresía','Vencimiento membresía','Fecha registro',
-    'Ciudad nacimiento','Dirección','Fecha nacimiento',
-    'Título pregrado','Institución pregrado','Fecha grado pregrado',
-    'Título posgrado','Institución posgrado','Fecha grado posgrado',
-    'Empresa','Cargo','Hobbies',
-  ]
+  'Cédula','Nombre completo','Email','Teléfono','Estado',
+  'Inicio membresía','Vencimiento membresía','Fecha registro',
+  'Ciudad nacimiento','Dirección','Fecha nacimiento',
+  'Programa 1','Programa 2','Programa 3',
+  'Est. externo 1 - Título','Est. externo 1 - Institución','Est. externo 1 - Fecha',
+  'Est. externo 2 - Título','Est. externo 2 - Institución','Est. externo 2 - Fecha',
+  'Est. externo 3 - Título','Est. externo 3 - Institución','Est. externo 3 - Fecha',
+  'Empresa','Cargo','Hobbies',
+]
   // Crear workbook con xlsx
   const ws_data = [headers, ...datos.map(row => cols.map(c => row[c] ?? ''))]
   const ws = XLSX.utils.aoa_to_sheet(ws_data)
@@ -196,11 +200,14 @@ function normalizarHeader(h: string): string {
   return h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]/g, ' ').trim().replace(/\s+/g, '_')
 }
+
 const HEADER_MAP: Record<string, string> = {
   cedula: 'cedula', numero_de_cedula: 'cedula', documento: 'cedula',
   nombre_completo: 'nombre', nombre: 'nombre', nombres: 'nombre',
   correo_electronico: 'email', correo: 'email', email: 'email',
-  telefono: 'telefono', celular: 'telefono',
+  programa_1: 'programa_1', programa1: 'programa_1',
+  programa_2: 'programa_2', programa2: 'programa_2',
+  programa_3: 'programa_3', programa3: 'programa_3',
 }
 
 const CSS = `
@@ -372,7 +379,7 @@ export default function DashboardPage() {
   const [modalImport,   setModalImport]   = useState(false)
   const [egSel,         setEgSel]         = useState<any>(null)
   const [fotoAmpliada,  setFotoAmpliada]  = useState<any>(null)
-  const [detTab,        setDetTab]        = useState<'info'|'membresia'|'estudios'|'laboral'>('info')
+  const [detTab, setDetTab]               = useState<'info'|'membresia'|'programas'|'estudios'|'laboral'>('info')
   const [sidebarOpen,   setSidebarOpen]   = useState(false)
   const [verificando,   setVerificando]   = useState(false)
 
@@ -386,17 +393,55 @@ export default function DashboardPage() {
 
   // Form egresado completo
   const [formEg, setFormEg] = useState({
-    cedula:'', nombre:'', email:'', telefono:'',
-    ciudad_nacimiento:'', direccion:'', fecha_nacimiento:'',
-    titulo_pregrado:'', institucion_pregrado:'', fecha_grado_pregrado:'',
-    titulo_posgrado:'', institucion_posgrado:'', fecha_grado_posgrado:'',
-    empresa:'', cargo:'', hobbies:'',
-  })
+  cedula:'', nombre:'', email:'', programa_1:'', programa_2:'', programa_3:'',
+})
+
   const [formSec,      setFormSec]      = useState({ cedula:'', nombre:'', email:'' })
   const [saving,       setSaving]       = useState(false)
   const [editandoEmail,setEditandoEmail]= useState(false)
   const [nuevoEmail,   setNuevoEmail]   = useState('')
   const [savingEmail,  setSavingEmail]  = useState(false)
+
+  const [formProgramas,   setFormProgramas]   = useState({ programa_1:'', programa_2:'', programa_3:'' })
+  const [savingProgramas, setSavingProgramas] = useState(false)
+  const [formEstExt,      setFormEstExt]      = useState({ e1_titulo:'', e1_institucion:'', e1_fecha:'', e2_titulo:'', e2_institucion:'', e2_fecha:'', e3_titulo:'', e3_institucion:'', e3_fecha:'',})
+  const [savingEstExt, setSavingEstExt] = useState(false)
+
+  function abrirDetalle(eg:any) {
+  setEgSel(eg);setModalDetalle(true);setDetTab('info');setEditandoEmail(false);setNuevoEmail(eg.email??'')
+  setFormProgramas({ programa_1: eg.programa_1??'', programa_2: eg.programa_2??'', programa_3: eg.programa_3??'' })
+  setFormEstExt({
+    e1_titulo: eg.estudio_ext_1_titulo??'', e1_institucion: eg.estudio_ext_1_institucion??'', e1_fecha: eg.estudio_ext_1_fecha??'',
+    e2_titulo: eg.estudio_ext_2_titulo??'', e2_institucion: eg.estudio_ext_2_institucion??'', e2_fecha: eg.estudio_ext_2_fecha??'',
+    e3_titulo: eg.estudio_ext_3_titulo??'', e3_institucion: eg.estudio_ext_3_institucion??'', e3_fecha: eg.estudio_ext_3_fecha??'',
+  })
+  }
+
+  async function guardarProgramas() {
+    setSavingProgramas(true)
+    const {error}=await supabase.from('egresados').update({
+      programa_1: formProgramas.programa_1||null,
+      programa_2: formProgramas.programa_2||null,
+      programa_3: formProgramas.programa_3||null,
+    }).eq('id', egSel.id)
+    setSavingProgramas(false)
+    if (error) return alert('Error: '+error.message)
+    alert('✓ Estudios UIS actualizados.')
+    cargarTodo()
+  }
+
+  async function guardarEstudiosExternos() {
+    setSavingEstExt(true)
+    const {error}=await supabase.from('egresados').update({
+      estudio_ext_1_titulo: formEstExt.e1_titulo||null, estudio_ext_1_institucion: formEstExt.e1_institucion||null, estudio_ext_1_fecha: formEstExt.e1_fecha||null,
+      estudio_ext_2_titulo: formEstExt.e2_titulo||null, estudio_ext_2_institucion: formEstExt.e2_institucion||null, estudio_ext_2_fecha: formEstExt.e2_fecha||null,
+      estudio_ext_3_titulo: formEstExt.e3_titulo||null, estudio_ext_3_institucion: formEstExt.e3_institucion||null, estudio_ext_3_fecha: formEstExt.e3_fecha||null,
+    }).eq('id', egSel.id)
+    setSavingEstExt(false)
+    if (error) return alert('Error: '+error.message)
+    alert('✓ Estudios externos actualizados.')
+    cargarTodo()
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => { setSesion(session); setCargandoAuth(false) })
@@ -462,34 +507,35 @@ export default function DashboardPage() {
         }
         return out
       }).filter(r=>r.cedula&&r.nombre&&r.email)
-      if (!normalized.length) { alert('Sin filas válidas. Columnas requeridas: Cédula, Nombre, Email.'); return }
+      if (!normalized.length) { alert('Sin filas válidas. Columnas requeridas: Cédula, Nombre Completo, Email. Programa 1-3 son opcionales.'); return }
       setImportRows(normalized); setImportStatus(normalized.map(()=>'idle')); setImportMsg(normalized.map(()=>'')); setImportDone(false); setModalImport(true)
     }
     reader.readAsArrayBuffer(file)
   }
 
-    async function ejecutarImportacion() {
-    setImportando(true)
-    const status=[...importStatus]; const msgs=[...importMsg]
-    for (let i=0;i<importRows.length;i++) {
-      const row=importRows[i]; const cedula=row.cedula.replace(/[.\s]/g,'')
-      const {data:existing}=await supabase.from('egresados').select('id').eq('cedula',cedula).maybeSingle()
-      if (existing) { status[i]='dup';msgs[i]='Ya existe';setImportStatus([...status]);setImportMsg([...msgs]);continue }
-      const {error}=await supabase.from('egresados').insert({
-        cedula, nombre_completo:row.nombre, email:row.email.toLowerCase(),
-        telefono:row.telefono||null, fecha_expedicion:null, fecha_vencimiento:null,
-        estado:'inactivo', requiere_cambio_clave:true,
-      })
-      if (error) { status[i]='err';msgs[i]=error.message } else { status[i]='ok';msgs[i]='Creado (inactivo)' }
-      setImportStatus([...status]);setImportMsg([...msgs])
-    }
-    setImportando(false);setImportDone(true);cargarTodo()
+  async function ejecutarImportacion() {
+  setImportando(true)
+  const status=[...importStatus]; const msgs=[...importMsg]
+  for (let i=0;i<importRows.length;i++) {
+    const row=importRows[i]; const cedula=row.cedula.replace(/[.\s]/g,'')
+    const {data:existing}=await supabase.from('egresados').select('id').eq('cedula',cedula).maybeSingle()
+    if (existing) { status[i]='dup';msgs[i]='Ya existe';setImportStatus([...status]);setImportMsg([...msgs]);continue }
+    const {error}=await supabase.from('egresados').insert({
+      cedula, nombre_completo:row.nombre, email:row.email.toLowerCase(),
+      programa_1: row.programa_1||null, programa_2: row.programa_2||null, programa_3: row.programa_3||null,
+      fecha_expedicion:null, fecha_vencimiento:null,
+      estado:'inactivo', requiere_cambio_clave:true,
+    })
+    if (error) { status[i]='err';msgs[i]=error.message } else { status[i]='ok';msgs[i]='Creado (inactivo)' }
+    setImportStatus([...status]);setImportMsg([...msgs])
   }
+  setImportando(false);setImportDone(true);cargarTodo()
+}
   
   const egresadosFiltrados = egresados.filter(eg => {
     const matchEstado=filtroEstado==='todos'||eg.estado===filtroEstado
     const q=busqueda.toLowerCase()
-    const matchBusqueda=!q||eg.nombre_completo?.toLowerCase().includes(q)||eg.cedula?.includes(q)||(eg.email??'').toLowerCase().includes(q)||(eg.empresa??'').toLowerCase().includes(q)
+    const matchBusqueda=!q||eg.nombre_completo?.toLowerCase().includes(q)||eg.cedula?.includes(q)||(eg.email??'').toLowerCase().includes(q)||(eg.empresa??'').toLowerCase().includes(q)||(eg.programa_1??'').toLowerCase().includes(q)
     return matchEstado&&matchBusqueda
   })
 
@@ -510,27 +556,21 @@ export default function DashboardPage() {
   async function manejarLogout() { await supabase.auth.signOut();setSesion(null) }
 
   async function crearEgresado() {
-    if (!formEg.cedula||!formEg.nombre||!formEg.email) return alert('Cédula, nombre y email son obligatorios.')
-    setSaving(true)
-    const {error}=await supabase.from('egresados').insert({
-      cedula:formEg.cedula.replace(/[.\s]/g,''), nombre_completo:formEg.nombre,
-      email:formEg.email.toLowerCase(), telefono:formEg.telefono||null,
-      fecha_expedicion:null, fecha_vencimiento:null,
-      estado:'inactivo', requiere_cambio_clave:true,
-      ciudad_nacimiento:formEg.ciudad_nacimiento||null, direccion:formEg.direccion||null,
-      fecha_nacimiento:formEg.fecha_nacimiento||null,
-      titulo_pregrado:formEg.titulo_pregrado||null, institucion_pregrado:formEg.institucion_pregrado||null,
-      fecha_grado_pregrado:formEg.fecha_grado_pregrado||null,
-      titulo_posgrado:formEg.titulo_posgrado||null, institucion_posgrado:formEg.institucion_posgrado||null,
-      fecha_grado_posgrado:formEg.fecha_grado_posgrado||null,
-      empresa:formEg.empresa||null, cargo:formEg.cargo||null, hobbies:formEg.hobbies||null,
-    })
-    setSaving(false)
-    if (error) return alert('Error: '+error.message)
-    alert(`✓ Egresado creado como inactivo\nContraseña inicial: ${formEg.cedula}\n\nActiva su membresía desde el detalle del egresado cuando corresponda.`)
-    setFormEg({cedula:'',nombre:'',email:'',telefono:'',ciudad_nacimiento:'',direccion:'',fecha_nacimiento:'',titulo_pregrado:'',institucion_pregrado:'',fecha_grado_pregrado:'',titulo_posgrado:'',institucion_posgrado:'',fecha_grado_posgrado:'',empresa:'',cargo:'',hobbies:''})
-    setModalNuevoEg(false);cargarTodo()
-  }
+  if (!formEg.cedula||!formEg.nombre||!formEg.email) return alert('Cédula, nombre y email son obligatorios.')
+  setSaving(true)
+  const {error}=await supabase.from('egresados').insert({
+    cedula:formEg.cedula.replace(/[.\s]/g,''), nombre_completo:formEg.nombre,
+    email:formEg.email.toLowerCase(),
+    programa_1:formEg.programa_1||null, programa_2:formEg.programa_2||null, programa_3:formEg.programa_3||null,
+    fecha_expedicion:null, fecha_vencimiento:null,
+    estado:'inactivo', requiere_cambio_clave:true,
+  })
+  setSaving(false)
+  if (error) return alert('Error: '+error.message)
+  alert(`✓ Egresado creado como inactivo\nContraseña inicial: ${formEg.cedula}\n\nActiva su membresía desde el detalle cuando corresponda.`)
+  setFormEg({cedula:'',nombre:'',email:'',programa_1:'',programa_2:'',programa_3:''})
+  setModalNuevoEg(false);cargarTodo()
+}
 
   async function crearSecretario() {
     if (!formSec.cedula||!formSec.nombre||!formSec.email) return alert('Todos los campos son obligatorios.')
@@ -557,14 +597,22 @@ export default function DashboardPage() {
     setModalDetalle(false);cargarTodo()
   }
 
-  async function eliminarEgresado(eg:any) {
-    if (!confirm(`⚠️ ¿Eliminar permanentemente a ${eg.nombre_completo}?`)) return
-    if (!confirm(`Confirma de nuevo: ¿eliminar a ${eg.nombre_completo}? Esta acción es IRREVERSIBLE.`)) return
-    const {error}=await supabase.from('egresados').delete().eq('id',eg.id)
-    if (error) return alert('Error: '+error.message)
-    alert('✓ Egresado eliminado.')
-    setModalDetalle(false);cargarTodo()
-  }
+  async function eliminarFotosStorage(egresadoId: string) {
+  const { data: archivos, error } = await supabase.storage.from('fotos-egresados').list(egresadoId)
+  if (error || !archivos?.length) return
+  const paths = archivos.map(f => `${egresadoId}/${f.name}`)
+  await supabase.storage.from('fotos-egresados').remove(paths)
+}
+
+async function eliminarEgresado(eg:any) {
+  if (!confirm(`⚠️ ¿Eliminar permanentemente a ${eg.nombre_completo}?`)) return
+  if (!confirm(`Confirma de nuevo: ¿eliminar a ${eg.nombre_completo}? Esta acción es IRREVERSIBLE.`)) return
+  await eliminarFotosStorage(eg.id)
+  const {error}=await supabase.from('egresados').delete().eq('id',eg.id)
+  if (error) return alert('Error: '+error.message)
+  alert('✓ Egresado eliminado (incluida su foto de perfil).')
+  setModalDetalle(false);cargarTodo()
+}
 
   async function actualizarEmail(eg:any,email:string) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Email inválido.'); return }
@@ -617,8 +665,7 @@ export default function DashboardPage() {
     cargarTodo()
   }
 
-
-  function abrirDetalle(eg:any) { setEgSel(eg);setModalDetalle(true);setDetTab('info');setEditandoEmail(false);setNuevoEmail(eg.email??'') }
+  
   function initials(n:string) { return n.split(' ').slice(0,2).map((x:string)=>x[0]).join('').toUpperCase() }
   function nombreArchivo(p:string) { return `ASEDUIS-${p}-${fechaHoy()}` }
 
@@ -1051,7 +1098,7 @@ if (!sesion) return (
                               </div>
                               <div>
                                 <div style={{fontWeight:600,fontSize:13}}>{eg.nombre_completo}</div>
-                                {eg.titulo_pregrado&&<div style={{fontSize:10,color:'#94A3B8'}}>{eg.titulo_pregrado}</div>}
+                                {eg.programa_1&&<div style={{fontSize:10,color:'#94A3B8'}}>{eg.programa_1}</div>}
                               </div>
                             </div>
                           </td>
@@ -1179,7 +1226,7 @@ if (!sesion) return (
         <div className="modal" style={{maxWidth:600}}>
           <div className="modal-title">📥 Importar egresados desde Excel</div>
           {importRows.length===0?<>
-            <div className="warn-box" style={{marginBottom:12}}>Columnas requeridas: <strong>Cédula</strong>, <strong>Nombre completo</strong>, <strong>Correo electrónico</strong>. Teléfono es opcional.</div>
+            <div className="warn-box" style={{marginBottom:12}}>Columnas requeridas: <strong>Cédula</strong>, <strong>Nombre completo</strong>, <strong>Correo electrónico</strong>. Programa 1-3 son opcionales.</div>
             <div className="drop-zone"
               onDragOver={e=>{e.preventDefault();(e.currentTarget as HTMLElement).classList.add('drag')}}
               onDragLeave={e=>(e.currentTarget as HTMLElement).classList.remove('drag')}
@@ -1203,14 +1250,14 @@ if (!sesion) return (
             
             <div className="import-scroll">
               <table className="import-table">
-                <thead><tr><th>#</th><th>Cédula</th><th>Nombre</th><th>Email</th>{importStatus.some(s=>s!=='idle')&&<th>Estado</th>}</tr></thead>
+                <thead><tr><th>#</th><th>Cédula</th><th>Nombre</th><th>Programa 1</th>{importStatus.some(s=>s!=='idle')&&<th>Estado</th>}</tr></thead>
                 <tbody>
                   {importRows.map((r,i)=>(
                     <tr key={i} style={{background:importStatus[i]==='ok'?'#F0FDF4':importStatus[i]==='err'?'#FEF2F2':importStatus[i]==='dup'?'#FFFBEB':''}}>
                       <td style={{color:'#94A3B8'}}>{i+1}</td>
                       <td>{r.cedula}</td>
                       <td style={{fontWeight:600}}>{r.nombre}</td>
-                      <td style={{fontSize:11,color:'#6B7280'}}>{r.email}</td>
+                      <td style={{fontSize:11,color:'#6B7280'}}>{r.programa_1||'—'}</td>
                       {importStatus.some(s=>s!=='idle')&&<td>
                         {importStatus[i]==='idle'&&<span style={{color:'#94A3B8',fontSize:11}}>Pendiente</span>}
                         {importStatus[i]==='ok'&&<span style={{color:'#16A34A',fontWeight:700,fontSize:11}}>✓ {importMsg[i]}</span>}
@@ -1259,7 +1306,7 @@ if (!sesion) return (
 
             {/* Tabs detalle */}
             <div className="detail-tabs">
-              {([{k:'info',l:'👤 Datos'},{k:'membresia',l:'🎫 Membresía'},{k:'estudios',l:'🎓 Estudios'},{k:'laboral',l:'💼 Laboral'}] as {k:typeof detTab;l:string}[]).map(t=>(
+              {([{k:'info',l:'👤 Datos'},{k:'membresia',l:'🎫 Membresía'},{k:'programas',l:'🎓 Estudios UIS'},{k:'estudios',l:'📘 Est. externos'},{k:'laboral',l:'💼 Laboral'}] as {k:typeof detTab;l:string}[]).map(t=>(
                 <button key={t.k} className={`detail-tab ${detTab===t.k?'on':''}`} onClick={()=>setDetTab(t.k)}>{t.l}</button>
               ))}
             </div>
@@ -1342,29 +1389,40 @@ if (!sesion) return (
               </div>
             </>}
 
-            {/* Tab: Estudios */}
-            {detTab==='estudios'&&<>
-              <div style={{fontSize:11,fontWeight:700,color:'#BE1522',textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Pregrado</div>
-              <div className="detail-grid">
-                {[
-                  {k:'Título',v:egSel.titulo_pregrado??'—'},
-                  {k:'Institución',v:egSel.institucion_pregrado??'—'},
-                  {k:'Fecha de grado',v:fmtFechaLegible(egSel.fecha_grado_pregrado)},
-                ].map(r=>(
-                  <div key={r.k} className="detail-row"><span className="detail-key">{r.k}</span><span className="detail-val">{r.v}</span></div>
+            {/* Tab: programas */}
+            {detTab==='programas'&&<>
+            <div style={{background:'#F9F1F1',borderRadius:12,padding:14}}>
+              <label className="form-lbl" style={{marginTop:0}}>Programa 1</label>
+              <input className="form-inp" value={formProgramas.programa_1} onChange={e=>setFormProgramas(p=>({...p,programa_1:e.target.value}))} placeholder="Ej: Ingeniería de Sistemas" />
+              <label className="form-lbl">Programa 2</label>
+              <input className="form-inp" value={formProgramas.programa_2} onChange={e=>setFormProgramas(p=>({...p,programa_2:e.target.value}))} placeholder="Opcional" />
+              <label className="form-lbl">Programa 3</label>
+              <input className="form-inp" value={formProgramas.programa_3} onChange={e=>setFormProgramas(p=>({...p,programa_3:e.target.value}))} placeholder="Opcional" />
+              <button className="btn btn-primary" style={{marginTop:14,width:'100%',justifyContent:'center'}} onClick={guardarProgramas} disabled={savingProgramas}>
+                {savingProgramas?'Guardando...':'✓ Guardar estudios UIS'}
+              </button>
+            </div>
+          </>}
+
+          {/* Tab: Estudios */}   
+          {detTab==='estudios'&&<>
+                {[1,2,3].map(n=>(
+                  <div key={n} style={{marginBottom:14}}>
+                    <div style={{fontSize:11,fontWeight:700,color:'#BE1522',textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Estudio externo {n}</div>
+                    <div style={{background:'#F9F1F1',borderRadius:12,padding:14}}>
+                      <label className="form-lbl" style={{marginTop:0}}>Título</label>
+                      <input className="form-inp" value={(formEstExt as any)[`e${n}_titulo`]} onChange={e=>setFormEstExt(p=>({...p,[`e${n}_titulo`]:e.target.value}))} placeholder="Ej: Especialización en..." />
+                      <div className="form-row2">
+                        <div><label className="form-lbl">Institución</label><input className="form-inp" value={(formEstExt as any)[`e${n}_institucion`]} onChange={e=>setFormEstExt(p=>({...p,[`e${n}_institucion`]:e.target.value}))} /></div>
+                        <div><label className="form-lbl">Fecha de grado</label><input className="form-inp" type="date" value={(formEstExt as any)[`e${n}_fecha`]} onChange={e=>setFormEstExt(p=>({...p,[`e${n}_fecha`]:e.target.value}))} /></div>
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </div>
-              <div style={{fontSize:11,fontWeight:700,color:'#BE1522',textTransform:'uppercase',letterSpacing:.5,marginBottom:8,marginTop:14}}>Posgrado</div>
-              <div className="detail-grid">
-                {[
-                  {k:'Título',v:egSel.titulo_posgrado??'—'},
-                  {k:'Institución',v:egSel.institucion_posgrado??'—'},
-                  {k:'Fecha de grado',v:fmtFechaLegible(egSel.fecha_grado_posgrado)},
-                ].map(r=>(
-                  <div key={r.k} className="detail-row"><span className="detail-key">{r.k}</span><span className="detail-val">{r.v}</span></div>
-                ))}
-              </div>
-            </>}
+                <button className="btn btn-primary" style={{width:'100%',justifyContent:'center'}} onClick={guardarEstudiosExternos} disabled={savingEstExt}>
+                  {savingEstExt?'Guardando...':'✓ Guardar estudios externos'}
+                </button>
+              </>}
 
             {/* Tab: Laboral */}
             {detTab==='laboral'&&<>
@@ -1393,48 +1451,22 @@ if (!sesion) return (
 
       {/* ══════════ MODAL NUEVO EGRESADO (completo) ══════════ */}
       <div className={`overlay ${modalNuevoEg?'show':''}`} onClick={e=>{if((e.target as any).className?.includes?.('overlay'))setModalNuevoEg(false)}}>
-        <div className="modal modal-wide">
+        <div className="modal">
           <div className="modal-title">👤 Nuevo egresado</div>
-          <div className="auto-box">Contraseña inicial = cédula. El egresado se crea como <strong>inactivo</strong>, sin fecha de membresía — actívalo desde su detalle cuando corresponda.</div>
-
-          <div className="form-section">Datos básicos *</div>
-          <div className="form-row2">
-            <div><label className="form-lbl">Cédula *</label><input className="form-inp" placeholder="Sin puntos ni espacios" value={formEg.cedula} onChange={e=>updFormEg('cedula',e.target.value)} /></div>
-            <div><label className="form-lbl">Teléfono</label><input className="form-inp" placeholder="+57 300..." value={formEg.telefono} onChange={e=>updFormEg('telefono',e.target.value)} /></div>
-          </div>
+          <div className="auto-box">Contraseña inicial = cédula. Se crea como <strong>inactivo</strong>, sin fecha de membresía — actívalo desde su detalle cuando corresponda.</div>
+          <label className="form-lbl" style={{marginTop:0}}>Cédula *</label>
+          <input className="form-inp" placeholder="Sin puntos ni espacios" value={formEg.cedula} onChange={e=>updFormEg('cedula',e.target.value)} />
           <label className="form-lbl">Nombre completo *</label>
           <input className="form-inp" placeholder="Nombres y apellidos" value={formEg.nombre} onChange={e=>updFormEg('nombre',e.target.value)} />
           <label className="form-lbl">Email *</label>
           <input className="form-inp" type="email" placeholder="correo@dominio.com" value={formEg.email} onChange={e=>updFormEg('email',e.target.value)} />
-
-
-          <div className="form-section">Datos personales</div>
-          <div className="form-row3">
-            <div><label className="form-lbl">Fecha nacimiento</label><input className="form-inp" type="date" value={formEg.fecha_nacimiento} onChange={e=>updFormEg('fecha_nacimiento',e.target.value)} /></div>
-            <div><label className="form-lbl">Ciudad nacimiento</label><input className="form-inp" placeholder="Bucaramanga" value={formEg.ciudad_nacimiento} onChange={e=>updFormEg('ciudad_nacimiento',e.target.value)} /></div>
-            <div><label className="form-lbl">Dirección</label><input className="form-inp" placeholder="Dirección actual" value={formEg.direccion} onChange={e=>updFormEg('direccion',e.target.value)} /></div>
-          </div>
-
-          <div className="form-section">Estudios de pregrado</div>
-          <div className="form-row3">
-            <div><label className="form-lbl">Título</label><input className="form-inp" placeholder="Ing. de Sistemas" value={formEg.titulo_pregrado} onChange={e=>updFormEg('titulo_pregrado',e.target.value)} /></div>
-            <div><label className="form-lbl">Institución</label><input className="form-inp" placeholder="UIS" value={formEg.institucion_pregrado} onChange={e=>updFormEg('institucion_pregrado',e.target.value)} /></div>
-            <div><label className="form-lbl">Fecha de grado</label><input className="form-inp" type="date" value={formEg.fecha_grado_pregrado} onChange={e=>updFormEg('fecha_grado_pregrado',e.target.value)} /></div>
-          </div>
-
-          <div className="form-section">Estudios de posgrado (opcional)</div>
-          <div className="form-row3">
-            <div><label className="form-lbl">Título</label><input className="form-inp" placeholder="Magíster en..." value={formEg.titulo_posgrado} onChange={e=>updFormEg('titulo_posgrado',e.target.value)} /></div>
-            <div><label className="form-lbl">Institución</label><input className="form-inp" placeholder="UIS" value={formEg.institucion_posgrado} onChange={e=>updFormEg('institucion_posgrado',e.target.value)} /></div>
-            <div><label className="form-lbl">Fecha de grado</label><input className="form-inp" type="date" value={formEg.fecha_grado_posgrado} onChange={e=>updFormEg('fecha_grado_posgrado',e.target.value)} /></div>
-          </div>
-
-          <div className="form-section">Información laboral (opcional)</div>
-          <div className="form-row2">
-            <div><label className="form-lbl">Empresa</label><input className="form-inp" placeholder="Bancolombia" value={formEg.empresa} onChange={e=>updFormEg('empresa',e.target.value)} /></div>
-            <div><label className="form-lbl">Cargo</label><input className="form-inp" placeholder="Analista senior" value={formEg.cargo} onChange={e=>updFormEg('cargo',e.target.value)} /></div>
-          </div>
-
+          <div className="form-section">Estudios UIS</div>
+          <label className="form-lbl" style={{marginTop:0}}>Programa 1</label>
+          <input className="form-inp" placeholder="Ej: Ingeniería de Sistemas" value={formEg.programa_1} onChange={e=>updFormEg('programa_1',e.target.value)} />
+          <label className="form-lbl">Programa 2</label>
+          <input className="form-inp" placeholder="Opcional" value={formEg.programa_2} onChange={e=>updFormEg('programa_2',e.target.value)} />
+          <label className="form-lbl">Programa 3</label>
+          <input className="form-inp" placeholder="Opcional" value={formEg.programa_3} onChange={e=>updFormEg('programa_3',e.target.value)} />
           <div style={{display:'flex',gap:10,marginTop:20}}>
             <button className="btn btn-outline" style={{flex:1,justifyContent:'center'}} onClick={()=>setModalNuevoEg(false)}>Cancelar</button>
             <button className="btn btn-primary" style={{flex:1,justifyContent:'center'}} onClick={crearEgresado} disabled={saving}>{saving?'Creando...':'✓ Crear egresado'}</button>
