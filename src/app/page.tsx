@@ -409,39 +409,47 @@ export default function DashboardPage() {
 
   function abrirDetalle(eg:any) {
   setEgSel(eg);setModalDetalle(true);setDetTab('info');setEditandoEmail(false);setNuevoEmail(eg.email??'')
-  setFormProgramas({programa_1: eg.programa_1??'', programa_2: eg.programa_2??'', programa_3: eg.programa_3??'', fecha_grado_1: eg.fecha_grado_1??'', fecha_grado_2: eg.fecha_grado_2??'', fecha_grado_3: eg.fecha_grado_3??'',})
+  setFormProgramas({
+  programa_1: eg.programa_1??'', programa_2: eg.programa_2??'', programa_3: eg.programa_3??'',
+  fecha_grado_1: eg.fecha_grado_1?String(eg.fecha_grado_1):'',
+  fecha_grado_2: eg.fecha_grado_2?String(eg.fecha_grado_2):'',
+  fecha_grado_3: eg.fecha_grado_3?String(eg.fecha_grado_3):'',
+  })
   setFormEstExt({
-    e1_titulo: eg.estudio_ext_1_titulo??'', e1_institucion: eg.estudio_ext_1_institucion??'', e1_fecha: eg.estudio_ext_1_fecha??'',
-    e2_titulo: eg.estudio_ext_2_titulo??'', e2_institucion: eg.estudio_ext_2_institucion??'', e2_fecha: eg.estudio_ext_2_fecha??'',
-    e3_titulo: eg.estudio_ext_3_titulo??'', e3_institucion: eg.estudio_ext_3_institucion??'', e3_fecha: eg.estudio_ext_3_fecha??'',
+  e1_titulo: eg.estudio_ext_1_titulo??'', e1_institucion: eg.estudio_ext_1_institucion??'', e1_fecha: eg.estudio_ext_1_fecha?String(eg.estudio_ext_1_fecha):'',
+  e2_titulo: eg.estudio_ext_2_titulo??'', e2_institucion: eg.estudio_ext_2_institucion??'', e2_fecha: eg.estudio_ext_2_fecha?String(eg.estudio_ext_2_fecha):'',
+  e3_titulo: eg.estudio_ext_3_titulo??'', e3_institucion: eg.estudio_ext_3_institucion??'', e3_fecha: eg.estudio_ext_3_fecha?String(eg.estudio_ext_3_fecha):'',
   })
   }
 
   async function guardarProgramas() {
   setSavingProgramas(true)
   const {error}=await supabase.from('egresados').update({
-    fecha_grado_1: formProgramas.fecha_grado_1||null,
-    fecha_grado_2: formProgramas.fecha_grado_2||null,
-    fecha_grado_3: formProgramas.fecha_grado_3||null,
+    fecha_grado_1: formProgramas.fecha_grado_1 ? parseInt(formProgramas.fecha_grado_1,10) : null,
+    fecha_grado_2: formProgramas.fecha_grado_2 ? parseInt(formProgramas.fecha_grado_2,10) : null,
+    fecha_grado_3: formProgramas.fecha_grado_3 ? parseInt(formProgramas.fecha_grado_3,10) : null,
   }).eq('id', egSel.id)
   setSavingProgramas(false)
   if (error) return alert('Error: '+error.message)
-  alert('✓ Fechas de grado actualizadas.')
+  alert('✓ Años de grado actualizados.')
   cargarTodo()
-  }
+}
 
   async function guardarEstudiosExternos() {
-    setSavingEstExt(true)
-    const {error}=await supabase.from('egresados').update({
-      estudio_ext_1_titulo: formEstExt.e1_titulo||null, estudio_ext_1_institucion: formEstExt.e1_institucion||null, estudio_ext_1_fecha: formEstExt.e1_fecha||null,
-      estudio_ext_2_titulo: formEstExt.e2_titulo||null, estudio_ext_2_institucion: formEstExt.e2_institucion||null, estudio_ext_2_fecha: formEstExt.e2_fecha||null,
-      estudio_ext_3_titulo: formEstExt.e3_titulo||null, estudio_ext_3_institucion: formEstExt.e3_institucion||null, estudio_ext_3_fecha: formEstExt.e3_fecha||null,
-    }).eq('id', egSel.id)
-    setSavingEstExt(false)
-    if (error) return alert('Error: '+error.message)
-    alert('✓ Estudios externos actualizados.')
-    cargarTodo()
-  }
+  setSavingEstExt(true)
+  const {error}=await supabase.from('egresados').update({
+    estudio_ext_1_titulo: formEstExt.e1_titulo||null, estudio_ext_1_institucion: formEstExt.e1_institucion||null,
+    estudio_ext_1_fecha: formEstExt.e1_fecha?parseInt(formEstExt.e1_fecha,10):null,
+    estudio_ext_2_titulo: formEstExt.e2_titulo||null, estudio_ext_2_institucion: formEstExt.e2_institucion||null,
+    estudio_ext_2_fecha: formEstExt.e2_fecha?parseInt(formEstExt.e2_fecha,10):null,
+    estudio_ext_3_titulo: formEstExt.e3_titulo||null, estudio_ext_3_institucion: formEstExt.e3_institucion||null,
+    estudio_ext_3_fecha: formEstExt.e3_fecha?parseInt(formEstExt.e3_fecha,10):null,
+  }).eq('id', egSel.id)
+  setSavingEstExt(false)
+  if (error) return alert('Error: '+error.message)
+  alert('✓ Estudios externos actualizados.')
+  cargarTodo()
+}
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => { setSesion(session); setCargandoAuth(false) })
@@ -1397,16 +1405,17 @@ if (!sesion) return (
                 if (!programa) return null
                 return (
                   <div key={n} style={{marginBottom:16}}>
-                    <label className="form-lbl" style={{marginTop:n===1?0:0}}>Programa {n}</label>
+                    <label className="form-lbl" style={{marginTop:0}}>Programa {n}</label>
                     <input className="form-inp" value={programa} disabled style={{opacity:.65,cursor:'not-allowed',background:'#F1F1F1'}} />
-                    <label className="form-lbl">Fecha de grado</label>
-                    <input className="form-inp" type="date" value={(formProgramas as any)[`fecha_grado_${n}`]}
-                      onChange={e=>setFormProgramas(p=>({...p,[`fecha_grado_${n}`]:e.target.value}))} />
+                    <label className="form-lbl">Año de grado</label>
+                    <input className="form-inp" type="number" min="1950" max="2100" placeholder="Ej: 2020"
+                      value={(formProgramas as any)[`fecha_grado_${n}`]}
+                      onChange={e=>setFormProgramas(p=>({...p,[`fecha_grado_${n}`]:e.target.value.slice(0,4)}))} />
                   </div>
                 )
               })}
               <button className="btn btn-primary" style={{marginTop:4,width:'100%',justifyContent:'center'}} onClick={guardarProgramas} disabled={savingProgramas}>
-                {savingProgramas?'Guardando...':'✓ Guardar fechas de grado'}
+                {savingProgramas?'Guardando...':'✓ Guardar años de grado'}
               </button>
             </div>
             </>}
@@ -1421,7 +1430,10 @@ if (!sesion) return (
                       <input className="form-inp" value={(formEstExt as any)[`e${n}_titulo`]} onChange={e=>setFormEstExt(p=>({...p,[`e${n}_titulo`]:e.target.value}))} placeholder="Ej: Especialización en..." />
                       <div className="form-row2">
                         <div><label className="form-lbl">Institución</label><input className="form-inp" value={(formEstExt as any)[`e${n}_institucion`]} onChange={e=>setFormEstExt(p=>({...p,[`e${n}_institucion`]:e.target.value}))} /></div>
-                        <div><label className="form-lbl">Fecha de grado</label><input className="form-inp" type="date" value={(formEstExt as any)[`e${n}_fecha`]} onChange={e=>setFormEstExt(p=>({...p,[`e${n}_fecha`]:e.target.value}))} /></div>
+                        <div><label className="form-lbl">Año de grado</label><input className="form-inp" type="number" min="1950" max="2100" placeholder="Ej: 2018"
+                        value={(formEstExt as any)[`e${n}_fecha`]}
+                        onChange={e=>setFormEstExt(p=>({...p,[`e${n}_fecha`]:e.target.value.slice(0,4)}))} />
+                      </div>
                       </div>
                     </div>
                   </div>
