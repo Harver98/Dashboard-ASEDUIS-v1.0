@@ -402,14 +402,14 @@ export default function DashboardPage() {
   const [nuevoEmail,   setNuevoEmail]   = useState('')
   const [savingEmail,  setSavingEmail]  = useState(false)
 
-  const [formProgramas,   setFormProgramas]   = useState({ programa_1:'', programa_2:'', programa_3:'' })
+  const [formProgramas, setFormProgramas] = useState({ programa_1:'', programa_2:'', programa_3:'', fecha_grado_1:'', fecha_grado_2:'', fecha_grado_3:'',})
   const [savingProgramas, setSavingProgramas] = useState(false)
   const [formEstExt,      setFormEstExt]      = useState({ e1_titulo:'', e1_institucion:'', e1_fecha:'', e2_titulo:'', e2_institucion:'', e2_fecha:'', e3_titulo:'', e3_institucion:'', e3_fecha:'',})
   const [savingEstExt, setSavingEstExt] = useState(false)
 
   function abrirDetalle(eg:any) {
   setEgSel(eg);setModalDetalle(true);setDetTab('info');setEditandoEmail(false);setNuevoEmail(eg.email??'')
-  setFormProgramas({ programa_1: eg.programa_1??'', programa_2: eg.programa_2??'', programa_3: eg.programa_3??'' })
+  setFormProgramas({programa_1: eg.programa_1??'', programa_2: eg.programa_2??'', programa_3: eg.programa_3??'', fecha_grado_1: eg.fecha_grado_1??'', fecha_grado_2: eg.fecha_grado_2??'', fecha_grado_3: eg.fecha_grado_3??'',})
   setFormEstExt({
     e1_titulo: eg.estudio_ext_1_titulo??'', e1_institucion: eg.estudio_ext_1_institucion??'', e1_fecha: eg.estudio_ext_1_fecha??'',
     e2_titulo: eg.estudio_ext_2_titulo??'', e2_institucion: eg.estudio_ext_2_institucion??'', e2_fecha: eg.estudio_ext_2_fecha??'',
@@ -418,16 +418,16 @@ export default function DashboardPage() {
   }
 
   async function guardarProgramas() {
-    setSavingProgramas(true)
-    const {error}=await supabase.from('egresados').update({
-      programa_1: formProgramas.programa_1||null,
-      programa_2: formProgramas.programa_2||null,
-      programa_3: formProgramas.programa_3||null,
-    }).eq('id', egSel.id)
-    setSavingProgramas(false)
-    if (error) return alert('Error: '+error.message)
-    alert('✓ Estudios UIS actualizados.')
-    cargarTodo()
+  setSavingProgramas(true)
+  const {error}=await supabase.from('egresados').update({
+    fecha_grado_1: formProgramas.fecha_grado_1||null,
+    fecha_grado_2: formProgramas.fecha_grado_2||null,
+    fecha_grado_3: formProgramas.fecha_grado_3||null,
+  }).eq('id', egSel.id)
+  setSavingProgramas(false)
+  if (error) return alert('Error: '+error.message)
+  alert('✓ Fechas de grado actualizadas.')
+  cargarTodo()
   }
 
   async function guardarEstudiosExternos() {
@@ -1392,17 +1392,24 @@ if (!sesion) return (
             {/* Tab: programas */}
             {detTab==='programas'&&<>
             <div style={{background:'#F9F1F1',borderRadius:12,padding:14}}>
-              <label className="form-lbl" style={{marginTop:0}}>Programa 1</label>
-              <input className="form-inp" value={formProgramas.programa_1} onChange={e=>setFormProgramas(p=>({...p,programa_1:e.target.value}))} placeholder="Ej: Ingeniería de Sistemas" />
-              <label className="form-lbl">Programa 2</label>
-              <input className="form-inp" value={formProgramas.programa_2} onChange={e=>setFormProgramas(p=>({...p,programa_2:e.target.value}))} placeholder="Opcional" />
-              <label className="form-lbl">Programa 3</label>
-              <input className="form-inp" value={formProgramas.programa_3} onChange={e=>setFormProgramas(p=>({...p,programa_3:e.target.value}))} placeholder="Opcional" />
-              <button className="btn btn-primary" style={{marginTop:14,width:'100%',justifyContent:'center'}} onClick={guardarProgramas} disabled={savingProgramas}>
-                {savingProgramas?'Guardando...':'✓ Guardar estudios UIS'}
+              {[1,2,3].map(n=>{
+                const programa=(formProgramas as any)[`programa_${n}`]
+                if (!programa) return null
+                return (
+                  <div key={n} style={{marginBottom:16}}>
+                    <label className="form-lbl" style={{marginTop:n===1?0:0}}>Programa {n}</label>
+                    <input className="form-inp" value={programa} disabled style={{opacity:.65,cursor:'not-allowed',background:'#F1F1F1'}} />
+                    <label className="form-lbl">Fecha de grado</label>
+                    <input className="form-inp" type="date" value={(formProgramas as any)[`fecha_grado_${n}`]}
+                      onChange={e=>setFormProgramas(p=>({...p,[`fecha_grado_${n}`]:e.target.value}))} />
+                  </div>
+                )
+              })}
+              <button className="btn btn-primary" style={{marginTop:4,width:'100%',justifyContent:'center'}} onClick={guardarProgramas} disabled={savingProgramas}>
+                {savingProgramas?'Guardando...':'✓ Guardar fechas de grado'}
               </button>
             </div>
-          </>}
+            </>}
 
           {/* Tab: Estudios */}   
           {detTab==='estudios'&&<>
