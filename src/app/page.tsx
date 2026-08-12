@@ -425,13 +425,16 @@ export default function DashboardPage() {
   async function guardarProgramas() {
   setSavingProgramas(true)
   const {error}=await supabase.from('egresados').update({
+    programa_1: formProgramas.programa_1||null,
+    programa_2: formProgramas.programa_2||null,
+    programa_3: formProgramas.programa_3||null,
     fecha_grado_1: formProgramas.fecha_grado_1 ? parseInt(formProgramas.fecha_grado_1,10) : null,
     fecha_grado_2: formProgramas.fecha_grado_2 ? parseInt(formProgramas.fecha_grado_2,10) : null,
     fecha_grado_3: formProgramas.fecha_grado_3 ? parseInt(formProgramas.fecha_grado_3,10) : null,
   }).eq('id', egSel.id)
   setSavingProgramas(false)
   if (error) return alert('Error: '+error.message)
-  alert('✓ Años de grado actualizados.')
+  alert('✓ Guardado.')
   cargarTodo()
 }
 
@@ -1399,26 +1402,35 @@ if (!sesion) return (
 
             {/* Tab: programas */}
             {detTab==='programas'&&<>
-            <div style={{background:'#F9F1F1',borderRadius:12,padding:14}}>
-              {[1,2,3].map(n=>{
-                const programa=(formProgramas as any)[`programa_${n}`]
-                if (!programa) return null
-                return (
-                  <div key={n} style={{marginBottom:16}}>
-                    <label className="form-lbl" style={{marginTop:0}}>Programa {n}</label>
-                    <input className="form-inp" value={programa} disabled style={{opacity:.65,cursor:'not-allowed',background:'#F1F1F1'}} />
-                    <label className="form-lbl">Año de grado</label>
-                    <input className="form-inp" type="number" min="1950" max="2100" placeholder="Ej: 2020"
-                      value={(formProgramas as any)[`fecha_grado_${n}`]}
-                      onChange={e=>setFormProgramas(p=>({...p,[`fecha_grado_${n}`]:e.target.value.slice(0,4)}))} />
-                  </div>
-                )
-              })}
-              <button className="btn btn-primary" style={{marginTop:4,width:'100%',justifyContent:'center'}} onClick={guardarProgramas} disabled={savingProgramas}>
-                {savingProgramas?'Guardando...':'✓ Guardar años de grado'}
-              </button>
-            </div>
-            </>}
+              <div style={{background:'#F9F1F1',borderRadius:12,padding:14}}>
+                {[1,2,3].map(n=>{
+                  const yaExiste = !!egSel[`programa_${n}`]   // valor ORIGINAL al abrir el detalle
+                  return (
+                    <div key={n} style={{marginBottom:16}}>
+                      <label className="form-lbl" style={{marginTop:0}}>Programa {n}</label>
+                      <input
+                        className="form-inp"
+                        value={(formProgramas as any)[`programa_${n}`]}
+                        disabled={yaExiste}
+                        placeholder={yaExiste?'':'Agregar programa (opcional)'}
+                        onChange={e=>setFormProgramas(p=>({...p,[`programa_${n}`]:e.target.value}))}
+                        style={yaExiste?{opacity:.65,cursor:'not-allowed',background:'#F1F1F1'}:{}}
+                      />
+                      {!yaExiste && <div style={{fontSize:11,color:'#94A3B8',marginTop:4}}>Escribe el nombre del programa para habilitar el año.</div>}
+                      {(yaExiste || (formProgramas as any)[`programa_${n}`]) && <>
+                        <label className="form-lbl">Año de grado</label>
+                        <input className="form-inp" type="number" min="1950" max="2100" placeholder="Ej: 2020"
+                          value={(formProgramas as any)[`fecha_grado_${n}`]}
+                          onChange={e=>setFormProgramas(p=>({...p,[`fecha_grado_${n}`]:e.target.value.slice(0,4)}))} />
+                      </>}
+                    </div>
+                  )
+                })}
+                <button className="btn btn-primary" style={{marginTop:4,width:'100%',justifyContent:'center'}} onClick={guardarProgramas} disabled={savingProgramas}>
+                  {savingProgramas?'Guardando...':'✓ Guardar'}
+                </button>
+              </div>
+              </>}
 
           {/* Tab: Estudios */}   
           {detTab==='estudios'&&<>
